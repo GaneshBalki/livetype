@@ -17,12 +17,19 @@ export function connect({ hello, onMessage, onStatus }) {
   const url = `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws/${encodeURIComponent(roomId)}`;
   let ws;
   let delay = 1000;
+  let over = false; // proxies may drop close frames, so the server also says "closed"
 
   function open() {
     ws = new WebSocket(url);
     ws.onopen = () => ws.send(JSON.stringify(hello()));
     ws.onmessage = (e) => {
       const m = JSON.parse(e.data);
+      if (m.type === 'closed') {
+        over = true;
+        onStatus('ended', m.reason || 'This session has ended.');
+        ws.close();
+        return;
+      }
       if (m.type === 'welcome') {
         delay = 1000;
         onStatus('live');
@@ -30,6 +37,7 @@ export function connect({ hello, onMessage, onStatus }) {
       onMessage(m);
     };
     ws.onclose = (e) => {
+      if (over) return;
       if (e.code >= 4000 && e.code < 5000) {
         onStatus('ended', e.reason || 'This session has ended.');
         return;

@@ -4,6 +4,13 @@ All notable changes to LiveType are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [4.1.1] - 2026-11-26
+
+### Fixed
+- End session did nothing visible on devshire.in: the host and viewer pages
+  kept showing the session, and the old host link still opened. Pages are now
+  told the session is over, so both links stop working at once.
+
 ## [4.1.0] - 2026-11-26
 
 ### Added
@@ -253,6 +260,7 @@ All notable changes to LiveType are recorded here. The format follows
 - Live typing session with a shareable viewer link, write requests, and host
   approve, deny and take-back controls. Single Go binary with embedded web assets.
 
+[4.1.1]: https://github.com/GaneshBalki/livetype/compare/v4.1.0...v4.1.1
 [4.1.0]: https://github.com/GaneshBalki/livetype/compare/v4.0.2...v4.1.0
 [4.0.2]: https://github.com/GaneshBalki/livetype/compare/v4.0.1...v4.0.2
 [4.0.1]: https://github.com/GaneshBalki/livetype/compare/v4.0.0...v4.0.1
