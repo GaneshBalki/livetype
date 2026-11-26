@@ -9,8 +9,11 @@ type inbound struct {
 	Role     string `json:"role"`     // hello
 	HostKey  string `json:"hostKey"`  // hello
 	ViewerID string `json:"viewerId"` // hello, grant, deny
-	Text     string `json:"text"`     // update
-	Name     string `json:"name"`     // request_write
+	Text     string `json:"text"`     // update, ask, answer
+	Name     string `json:"name"`     // request_write, ask
+	Emoji    string `json:"emoji"`    // react
+	Up       bool   `json:"up"`       // hand
+	ID       string `json:"id"`       // answer, dismiss
 }
 
 func dispatch(r *room.Room, c *room.Client, m inbound) error {
@@ -29,6 +32,18 @@ func dispatch(r *room.Room, c *room.Client, m inbound) error {
 		return r.Deny(c, m.ViewerID)
 	case "revoke":
 		return r.Revoke(c)
+	case "react":
+		return r.React(c, m.Emoji)
+	case "hand":
+		return r.Hand(c, m.Up)
+	case "lower_hands":
+		return r.LowerHands(c)
+	case "ask":
+		return r.Ask(c, m.Name, m.Text)
+	case "answer":
+		return r.Answer(c, m.ID, m.Text)
+	case "dismiss":
+		return r.Dismiss(c, m.ID)
 	default:
 		return room.ErrBadMessage
 	}

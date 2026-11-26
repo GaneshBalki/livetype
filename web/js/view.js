@@ -1,4 +1,4 @@
-import { $, roomId, connect, makeEditor, makeToolbar, bindDownloads, render as renderHtml, toast, copy, setStatus, plural } from './common.js';
+import { $, roomId, connect, makeEditor, makeToolbar, bindDownloads, floatReaction, renderQuestions, render as renderHtml, toast, copy, setStatus, plural } from './common.js';
 
 const storageKey = `livetype:${roomId}`;
 const pre = $('text');
@@ -10,6 +10,7 @@ let ended = false;
 let hostOnline = true;
 let writer = null;
 let request = 'none'; // none | form | pending | denied
+let handUp = false;
 
 const conn = connect({
   hello: () => ({ type: 'hello', role: 'viewer', viewerId }),
@@ -59,6 +60,15 @@ function onMessage(m) {
       hostOnline = m.hostOnline;
       showCount(m.viewerCount);
       break;
+    case 'reaction':
+      floatReaction(m.emoji);
+      break;
+    case 'hand':
+      handUp = m.up;
+      break;
+    case 'questions':
+      renderQuestions($('questions'), m.list);
+      break;
     case 'error':
       if (m.code !== 'not_writer') toast(m.message); // not_writer only happens in a hand-over race
       break;
@@ -83,6 +93,10 @@ function render() {
 
   $('controls').disabled = !connected;
   $('controls').hidden = ended;
+  $('interact').disabled = !connected;
+  $('interact').hidden = ended;
+  $('hand-btn').setAttribute('aria-pressed', handUp);
+  $('hand-label').textContent = handUp ? 'Lower hand' : 'Raise hand';
   $('request-btn').hidden = writing || !(request === 'none' || request === 'denied');
   $('denied').hidden = writing || request !== 'denied';
   $('request-form').hidden = writing || request !== 'form';
@@ -120,7 +134,18 @@ $('stop-writing').addEventListener('click', () => {
 });
 
 $('copy-all').addEventListener('click', () => copy((editor.writable ? textarea : pre).innerText));
-bindDownloads(() => (editor.writable ? editorEl : pre).innerHTML);
+bindDownloads(() => (editor.writable ? textarea : pre).innerHTML);
+
+for (const b of document.querySelectorAll('[data-emoji]')) {
+  b.addEventListener('click', () => conn.send({ type: 'react', emoji: b.dataset.emoji }));
+}
+$('hand-btn').addEventListener('click', () => conn.send({ type: 'hand', up: !handUp }));
+$('ask-form').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const name = $('ask-name').value || $('name').value;
+  if (conn.send({ type: 'ask', name, text: $('ask-text').value })) $('ask-text').value = '';
+  if (!$('name').value) $('name').value = name; // one name for questions and write requests
+});
 $('autoscroll').addEventListener('change', (e) => {
   if (e.target.checked) pre.scrollTop = pre.scrollHeight;
 });

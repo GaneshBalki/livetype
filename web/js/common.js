@@ -299,3 +299,53 @@ export function bindDownloads(getHtml) {
     print();
   });
 }
+
+// ---------- reactions and questions ----------
+
+// floatReaction shows an emoji rising from the bottom right corner.
+export function floatReaction(emoji) {
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const el = document.createElement('span');
+  el.className = 'float-emoji';
+  el.textContent = emoji;
+  el.setAttribute('aria-hidden', 'true');
+  el.style.setProperty('--x', `${Math.round(Math.random() * 80)}px`);
+  el.addEventListener('animationend', () => el.remove());
+  document.body.append(el);
+}
+
+// renderQuestions draws the question list into ul. Questions are plain text
+// from viewers, so they only ever go through textContent. For the host,
+// actions(q) returns extra controls; drafts typed into them survive a redraw.
+export function renderQuestions(ul, list, actions) {
+  const drafts = new Map([...ul.querySelectorAll('input[data-q]')].map((i) => [i.dataset.q, i.value]));
+  const focused = document.activeElement?.dataset?.q;
+  ul.replaceChildren(...list.map((q) => {
+    const li = document.createElement('li');
+    li.className = q.answer ? 'answered' : '';
+    const who = document.createElement('span');
+    who.className = 'q-name';
+    who.textContent = q.mine ? `${q.name} (you)` : q.name;
+    const text = document.createElement('p');
+    text.className = 'q-text';
+    text.textContent = q.text;
+    li.append(who, text);
+    if (q.answer) {
+      const a = document.createElement('p');
+      a.className = 'q-answer';
+      a.textContent = q.answer;
+      li.append(a);
+    } else if (q.mine) {
+      const w = document.createElement('p');
+      w.className = 'q-wait';
+      w.textContent = 'Waiting for the host to answer';
+      li.append(w);
+    }
+    if (actions) li.append(actions(q));
+    return li;
+  }));
+  for (const i of ul.querySelectorAll('input[data-q]')) {
+    if (drafts.has(i.dataset.q)) i.value = drafts.get(i.dataset.q);
+    if (i.dataset.q === focused) i.focus();
+  }
+}

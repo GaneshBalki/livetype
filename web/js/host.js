@@ -1,4 +1,4 @@
-import { $, roomId, connect, makeEditor, makeToolbar, bindDownloads, toast, copy, setStatus, plural } from './common.js';
+import { $, roomId, connect, makeEditor, makeToolbar, bindDownloads, floatReaction, renderQuestions, toast, copy, setStatus, plural } from './common.js';
 
 const hostKey = new URLSearchParams(location.hash.slice(1)).get('k');
 const viewerUrl = `${location.origin}/v/${encodeURIComponent(roomId)}`;
@@ -32,6 +32,9 @@ function start() {
   bindDownloads(() => $('editor').innerHTML);
 
   $('take-back').addEventListener('click', () => conn.send({ type: 'revoke' }));
+  $('lower-hands').addEventListener('click', () => conn.send({ type: 'lower_hands' }));
+  let hands = 0;
+  let questionIds = null; // null until the first list, so a reload does not toast old questions
 
   function onMessage(m) {
     switch (m.type) {
@@ -53,10 +56,46 @@ function start() {
       case 'presence':
         showPresence(m);
         break;
+      case 'reaction':
+        floatReaction(m.emoji);
+        break;
+      case 'hands':
+        if (m.count > hands) toast('✋ A viewer raised their hand.');
+        hands = m.count;
+        $('hands').hidden = !m.count;
+        $('hand-count').textContent = `${plural(m.count, 'hand')} raised`;
+        break;
+      case 'questions':
+        if (questionIds && m.list.some((q) => !questionIds.has(q.id))) toast('New question from a viewer.');
+        questionIds = new Set(m.list.map((q) => q.id));
+        renderQuestions($('questions'), m.list, questionActions);
+        $('no-questions').hidden = m.list.length > 0;
+        $('question-count').textContent = m.list.filter((q) => !q.answer).length || '';
+        break;
       case 'error':
         if (m.code !== 'not_writer') toast(m.message); // not_writer only happens in a hand-over race
         break;
     }
+  }
+
+  function questionActions(q) {
+    const box = document.createElement('form');
+    box.className = 'q-actions';
+    if (!q.answer) {
+      const input = document.createElement('input');
+      input.dataset.q = q.id;
+      input.maxLength = 280;
+      input.required = true;
+      input.placeholder = 'Type an answer';
+      input.setAttribute('aria-label', `Answer ${q.name}`);
+      box.append(input, button('Answer', 'primary sm', null, 'submit'));
+      box.addEventListener('submit', (e) => {
+        e.preventDefault();
+        conn.send({ type: 'answer', id: q.id, text: input.value });
+      });
+    }
+    box.append(button('Dismiss', 'sm', () => conn.send({ type: 'dismiss', id: q.id })));
+    return box;
   }
 
   function renderRequests(list) {
@@ -78,12 +117,12 @@ function start() {
   }
 }
 
-function button(text, cls, onClick) {
+function button(text, cls, onClick, type = 'button') {
   const b = document.createElement('button');
-  b.type = 'button';
+  b.type = type;
   b.textContent = text;
   if (cls) b.className = cls;
-  b.addEventListener('click', onClick);
+  if (onClick) b.addEventListener('click', onClick);
   return b;
 }
 
@@ -105,7 +144,7 @@ function end(reason) {
   ended = true;
   setStatus('ended', 'Ended');
   $('editor').contentEditable = false;
-  for (const c of document.querySelectorAll('.tool-group :is(button, select, input)')) c.disabled = true;
+  for (const c of document.querySelectorAll('.tool-group :is(button, select, input), .requests :is(button, input)')) c.disabled = true;
   $('writer-banner').hidden = true;
   $('ended').textContent = reason;
   $('ended').hidden = false;

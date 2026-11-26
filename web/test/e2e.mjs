@@ -141,11 +141,31 @@ check('viewer becomes writer', await until(() => V(`document.getElementById('edi
 check('viewer toolbar shown + enabled', await V(`!document.querySelector('.toolbar').hidden && !document.querySelector('.toolbar button').disabled`));
 check('host toolbar disabled while viewer writes', await until(() => H(`document.querySelector('.toolbar button').disabled && document.getElementById('editor').contentEditable === 'false'`)));
 check('host Download stays usable while viewer writes', await H(`!document.getElementById('dl-doc').disabled && !document.querySelector('.download summary').closest(':disabled')`));
+check('viewer .doc download works while writing', await V(`new Promise((res) => { const c = URL.createObjectURL; URL.createObjectURL = (b) => { URL.createObjectURL = c; res(b.size > 0); return c(b); }; document.getElementById('dl-doc').click(); })`));
 await selectAll(V); await click(tool('Italic (Ctrl+I)'), V);
 check('viewer formatting reaches host', await until(async () => /italic|<i>/.test(await H(`document.getElementById('editor').innerHTML`))), await H(`document.getElementById('editor').innerHTML`));
 await click('#take-back');
 check('host takes back pen', await until(() => H(`document.getElementById('editor').contentEditable === 'true' && !document.querySelector('.toolbar button').disabled`)));
 check('viewer toolbar hidden again', await until(() => V(`document.querySelector('.toolbar').hidden`)));
+
+// --- reactions, raised hands, questions
+await click('[data-emoji="🎉"]', V);
+check('reaction floats on host', await until(() => H(`[...document.querySelectorAll('.float-emoji')].some((e) => e.textContent === '🎉')`)));
+check('reaction floats on viewer too', await until(() => V(`!!document.querySelector('.float-emoji')`)));
+await click('#hand-btn', V);
+check('raised hand shows on host', await until(() => H(`!document.getElementById('hands').hidden && document.getElementById('hand-count').textContent === '1 hand raised'`)));
+check('viewer hand button pressed', await until(() => V(`document.getElementById('hand-btn').getAttribute('aria-pressed') === 'true'`)));
+await click('#lower-hands');
+check('host lowers all hands', await until(() => V(`document.getElementById('hand-btn').getAttribute('aria-pressed') === 'false'`)) && await H(`document.getElementById('hands').hidden`));
+await V(`document.getElementById('ask-text').value = '<img src=x onerror="window.pwned=1"> why?'; document.getElementById('ask-form').requestSubmit()`);
+check('question reaches host', await until(() => H(`document.querySelector('#questions .q-text')?.textContent === '<img src=x onerror="window.pwned=1"> why?'`)));
+check('question shown as text, not HTML', await H(`!document.querySelector('#questions img') && window.pwned === undefined`));
+check('host toasted the new question', await H(`document.getElementById('toast').textContent`) === 'New question from a viewer.');
+check('asker sees own question waiting', await until(() => V(`!!document.querySelector('#questions .q-wait')`)));
+await H(`document.querySelector('#questions input').value = 'Because.'; document.querySelector('#questions form').requestSubmit()`);
+check('answer reaches viewer', await until(() => V(`document.querySelector('#questions .q-answer')?.textContent === 'Because.'`)));
+await H(`[...document.querySelectorAll('#questions button')].find((b) => b.textContent === 'Dismiss').click()`);
+check('dismiss clears it for viewer', await until(() => V(`document.querySelectorAll('#questions li').length === 0`)));
 
 // --- dark mode
 const before = await H(`document.documentElement.dataset.theme`);
