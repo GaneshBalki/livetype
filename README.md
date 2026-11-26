@@ -36,15 +36,6 @@ everyone sees your code or text appear as you type. No account, no install, free
 - Everything viewers send is cleaned before it is shown.
 - Per-network limits stop spam and abuse.
 
-## Development
+## What's new
 
-Requires Go 1.23+.
-
-```sh
-go run ./cmd/server   # http://localhost:8080
-go test ./...         # unit tests
-```
-
-Browser tests: `node web/test/e2e.mjs` (setup in the file header).
-
-Release history: [CHANGELOG.md](CHANGELOG.md).
+See [CHANGELOG.md](CHANGELOG.md).
