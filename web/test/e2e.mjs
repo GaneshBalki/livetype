@@ -205,6 +205,7 @@ check('host editor highlights while typing', await H(`document.querySelector('#e
 const cdoc = await H(`new Promise((res) => { const orig = URL.createObjectURL; URL.createObjectURL = (b) => { b.text().then(res); return orig(b); }; document.getElementById('dl-doc').click(); })`);
 check('.doc download of code is the plain code', /<pre data-lang="python">def hi\(name\):\n    return 'x' \+ 42  # done<\/pre>/.test(cdoc) && !/code-gutter|Copy code/.test(cdoc), cdoc.slice(0, 300));
 check('code view never runs markup', await V(`import('/js/sanitize.js').then(({ render }) => { const d = document.createElement('div'); render(d, '<pre data-lang="go"><img src=x onerror="window.pwned=1">x</pre>'); return !d.querySelector('img') && d.querySelector('.code-hl').textContent.includes('x'); })`));
+check('live cursor hidden in code mode', await V(`getComputedStyle(document.getElementById('text'), '::after').display === 'none'`));
 writeFileSync(`${OUT}/code-viewer.png`, Buffer.from((await viewer.send('Page.captureScreenshot', {})).result.data, 'base64'));
 writeFileSync(`${OUT}/code-host.png`, Buffer.from((await host.send('Page.captureScreenshot', {})).result.data, 'base64'));
 await choose('Text or code', '');
