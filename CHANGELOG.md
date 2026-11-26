@@ -4,6 +4,19 @@ All notable changes to LiveType are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [2.1.0] - 2026-11-26
+
+### Added
+- Scrolling "What's new" ticker in the header of the host and viewer pages,
+  showing new features and tips. It pauses on hover, hides on small screens,
+  and stops moving when the user prefers reduced motion.
+
+### Changed
+- Host page: removed the "Your document" header row, and moved the Download
+  menu into the formatting toolbar (right end). Download stays available while
+  a viewer holds the pen.
+- More spacing between formatting toolbar buttons and groups.
+
 ## [2.0.0] - 2026-11-26
 
 ### Added
@@ -48,5 +61,6 @@ All notable changes to LiveType are recorded here. The format follows
 - Live typing session with a shareable viewer link, write requests, and host
   approve, deny and take-back controls. Single Go binary with embedded web assets.
 
+[2.1.0]: https://github.com/GaneshBalki/livetype/compare/v2.0.0...v2.1.0
 [2.0.0]: https://github.com/GaneshBalki/livetype/compare/v1.0.0...v2.0.0
 [1.0.0]: https://github.com/GaneshBalki/livetype/releases/tag/v1.0.0

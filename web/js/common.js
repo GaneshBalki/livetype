@@ -274,7 +274,7 @@ export function makeToolbar(el) {
   return {
     el: bar,
     setEnabled(on) {
-      for (const c of bar.querySelectorAll('button, select, input')) c.disabled = !on;
+      for (const c of bar.querySelectorAll('.tool-group :is(button, select, input)')) c.disabled = !on;
     },
   };
 }

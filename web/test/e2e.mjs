@@ -140,6 +140,7 @@ await H(`[...document.querySelectorAll('#requests button')].find((b) => b.textCo
 check('viewer becomes writer', await until(() => V(`document.getElementById('editor').contentEditable === 'true' && !document.getElementById('editor').hidden`)));
 check('viewer toolbar shown + enabled', await V(`!document.querySelector('.toolbar').hidden && !document.querySelector('.toolbar button').disabled`));
 check('host toolbar disabled while viewer writes', await until(() => H(`document.querySelector('.toolbar button').disabled && document.getElementById('editor').contentEditable === 'false'`)));
+check('host Download stays usable while viewer writes', await H(`!document.getElementById('dl-doc').disabled && !document.querySelector('.download summary').closest(':disabled')`));
 await selectAll(V); await click(tool('Italic (Ctrl+I)'), V);
 check('viewer formatting reaches host', await until(async () => /italic|<i>/.test(await H(`document.getElementById('editor').innerHTML`))), await H(`document.getElementById('editor').innerHTML`));
 await click('#take-back');
