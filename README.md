@@ -21,7 +21,7 @@ with the web assets embedded.
 - Sessions survive restarts and redeploys when a database is set (see below).
 - Replay: watch how the text was typed, with a timeline and speed control.
 - Live rich text: font, size, bold, italic, underline, strikethrough,
-  sub/superscript, change case, font and highlight colors.
+  sub/superscript, font and highlight colors.
 - Dark mode toggle that remembers your choice.
 - Download the document as Word (.doc) or PDF.
 

@@ -179,24 +179,17 @@ export function plural(n, word) {
 
 // ---------- formatting toolbar ----------
 
-const FONTS = ['Monospace', 'System UI', 'Arial', 'Georgia', 'Times New Roman', 'Courier New', 'Verdana', 'Trebuchet MS'];
+const FONTS = ['System UI', 'Monospace', 'Arial', 'Georgia', 'Times New Roman', 'Courier New', 'Verdana', 'Trebuchet MS'];
 const FONT_STACKS = { Monospace: 'ui-monospace, Menlo, Consolas, monospace', 'System UI': 'system-ui, sans-serif' };
 // execCommand('fontSize') only takes levels 1-7; these are their pixel sizes.
 const SIZES = [10, 13, 16, 18, 24, 32, 48];
-const CASES = {
-  'Sentence case.': (t) => t.toLowerCase().replace(/(^\s*|[.!?]\s+)(\p{L})/gu, (_, a, b) => a + b.toUpperCase()),
-  lowercase: (t) => t.toLowerCase(),
-  UPPERCASE: (t) => t.toUpperCase(),
-  'Capitalize Each Word': (t) => t.toLowerCase().replace(/(^|\s)(\p{L})/gu, (_, a, b) => a + b.toUpperCase()),
-  'tOGGLE cASE': (t) => [...t].map((c) => (c === c.toUpperCase() ? c.toLowerCase() : c.toUpperCase())).join(''),
-};
 const TOGGLES = [
   ['bold', '<b>B</b>', 'Bold (Ctrl+B)'],
   ['italic', '<i>I</i>', 'Italic (Ctrl+I)'],
   ['underline', '<u>U</u>', 'Underline (Ctrl+U)'],
   ['strikeThrough', '<s>ab</s>', 'Strikethrough'],
-  ['subscript', 'x<sub>2</sub>', 'Subscript'],
-  ['superscript', 'x<sup>2</sup>', 'Superscript'],
+  ['subscript', '<span>x<sub>2</sub></span>', 'Subscript'],
+  ['superscript', '<span>x<sup>2</sup></span>', 'Superscript'],
 ];
 
 // makeToolbar returns a Word-style font toolbar that formats the selection in el.
@@ -211,9 +204,21 @@ export function makeToolbar(el, editor) {
   let saved = null;
   document.addEventListener('selectionchange', () => {
     const sel = getSelection();
-    if (sel.rangeCount && el.contains(sel.anchorNode)) saved = sel.getRangeAt(0);
+    if (sel.rangeCount && el.contains(sel.anchorNode)) saved = sel.getRangeAt(0).cloneRange(); // a copy: the live range follows focus into the select
     sync();
   });
+  // Highlight is written as a style attribute (by the command, or by typing
+  // after highlighted text), which the CSP (no inline styles) ignores; re-set
+  // it through the CSSOM, which the CSP allows.
+  function restyle() {
+    for (const n of el.querySelectorAll('[style]')) {
+      for (const d of n.getAttribute('style').split(';')) {
+        const i = d.indexOf(':');
+        if (i > 0) n.style.setProperty(d.slice(0, i).trim(), d.slice(i + 1).trim());
+      }
+    }
+  }
+  el.addEventListener('input', restyle, true);
   function exec(cmd, value) {
     if (el.contentEditable !== 'true') return;
     el.focus();
@@ -221,6 +226,7 @@ export function makeToolbar(el, editor) {
     document.execCommand('styleWithCSS', false, false); // tags, not CSS spans: Chrome's CSS mode overwrites one span style with the next
     const before = el.innerHTML;
     document.execCommand(cmd, false, value);
+    restyle();
     // Chrome skips 'input' when a command only restyles an existing element
     // (e.g. hiliteColor on a <font>), so the change would never be sent.
     if (el.innerHTML !== before) el.dispatchEvent(new Event('input'));
@@ -231,23 +237,52 @@ export function makeToolbar(el, editor) {
   const size = select('Font size', SIZES.map((px, i) => [i + 1, px]), (v) => exec('fontSize', v));
   size.value = 3;
   const level = () => Number(document.queryCommandValue('fontSize')) || 3;
-  const grow = tool('A<sup>+</sup>', 'Increase font size', () => exec('fontSize', Math.min(7, level() + 1)));
-  const shrink = tool('A<sup>−</sup>', 'Decrease font size', () => exec('fontSize', Math.max(1, level() - 1)));
-  const cases = select('Change case', Object.keys(CASES).map((k) => [k, k]), (v) => {
-    const text = (saved || getSelection()).toString();
-    // ponytail: rewrites the selection as plain text, so mixed formatting
-    // inside it is lost. Walking the text nodes would keep it.
-    if (text) exec('insertText', CASES[v](text));
-  }, 'Aa');
-  cases.classList.add('narrow');
-  const clear = tool('<svg class="icon" viewBox="0 0 24 24"><path d="m7 21-4-4L14 6l5 5-8 8"/><path d="M7 21h14M10 10l5 5"/></svg>',
-    'Clear formatting', () => exec('removeFormat'));
+  const grow = tool('<span>A<sup>+</sup></span>', 'Increase font size', () => exec('fontSize', Math.min(7, level() + 1)));
+  const shrink = tool('<span>A<sup>−</sup></span>', 'Decrease font size', () => exec('fontSize', Math.max(1, level() - 1)));
   const toggles = TOGGLES.map(([cmd, html, label]) => {
     const b = tool(html, label, () => exec(cmd));
     b.dataset.cmd = cmd;
     return b;
   });
-  const highlight = color('<span class="mark-hl">ab</span>', 'Highlight color', '#fde047', (v) => exec('hiliteColor', v));
+  // The highlight button toggles: on highlighted text it removes the highlight.
+  const lit = (n) => !!n.style?.backgroundColor && n.style.backgroundColor !== 'transparent';
+  const highlighted = () => {
+    if (!saved) return false;
+    for (let n = saved.startContainer; n && n !== el; n = n.parentNode) if (lit(n)) return true;
+    return [...el.querySelectorAll('[style]')].some((n) => lit(n) && saved.intersectsNode(n));
+  };
+  // With only a caret inside a highlight, "off" means: what I type next is
+  // plain. Split the highlight at the caret and park the caret between the
+  // halves, after a zero-width space so Chrome doesn't pull it back inside.
+  // ponytail: leaves an invisible U+200B in the document.
+  const leaveHighlight = () => {
+    let lit0 = null;
+    let at = saved.startContainer; // a caret between elements: use the text just before it
+    if (at.nodeType === 1 && saved.startOffset > 0) for (at = at.childNodes[saved.startOffset - 1]; at.lastChild;) at = at.lastChild;
+    for (let n = at; n && n !== el; n = n.parentNode) if (lit(n)) lit0 = n;
+    if (!lit0) return false;
+    el.focus();
+    const tail = document.createRange();
+    if (at === saved.startContainer) tail.setStart(at, saved.startOffset);
+    else tail.setStartAfter(at);
+    tail.setEndAfter(lit0);
+    const rest = tail.extractContents();
+    const gap = document.createTextNode('\u200b');
+    lit0.after(gap, rest);
+    for (const n of [lit0, ...el.querySelectorAll('[style]')]) if (n.isConnected && !n.textContent) n.remove();
+    const r = document.createRange();
+    r.setStart(gap, 1);
+    getSelection().removeAllRanges();
+    getSelection().addRange(r);
+    el.dispatchEvent(new Event('input'));
+    return true;
+  };
+  // The button toggles; picking a colour from the ▾ palette always applies it.
+  const highlight = color('<span class="mark-hl">ab</span>', 'Highlight color', '#fde047', (v, picked) => {
+    if (!picked && saved?.collapsed && leaveHighlight()) return;
+    exec('hiliteColor', !picked && highlighted() ? 'transparent' : v);
+  });
+  highlight[0].title = 'Highlight color (click again to remove)';
   const fg = color('<span class="mark-fg">A</span>', 'Font color', '#dc2626', (v) => exec('foreColor', v));
 
   const group = (...kids) => {
@@ -258,7 +293,7 @@ export function makeToolbar(el, editor) {
   };
   const mode = select('Text or code', [['', 'Text'], ...Object.entries(LANGS).map(([id, l]) => [id, l.name])], (v) => editor.setMode(v));
   mode.classList.add('mode');
-  const formats = [group(font, size, grow, shrink, cases, clear), group(...toggles), group(...highlight, ...fg)];
+  const formats = [group(font, size, grow, shrink), group(...toggles), group(...highlight, ...fg)];
   bar.append(group(mode), ...formats);
   // Code has no fonts or colours: hide those tools while the document is code.
   editor.onMode = (lang) => {
@@ -285,17 +320,13 @@ export function makeToolbar(el, editor) {
     return b;
   }
 
-  function select(label, options, onChange, placeholder) {
+  function select(label, options, onChange) {
     const s = document.createElement('select');
     s.className = 'tool';
     s.title = label;
     s.setAttribute('aria-label', label);
-    if (placeholder) s.add(new Option(placeholder, '', true, true));
     for (const [value, text] of options) s.add(new Option(text, value));
-    s.addEventListener('change', () => {
-      onChange(s.value);
-      if (placeholder) s.value = '';
-    });
+    s.addEventListener('change', () => onChange(s.value));
     return s;
   }
 
@@ -310,7 +341,7 @@ export function makeToolbar(el, editor) {
     const b = tool(html, label, () => apply(picker.value));
     b.style.setProperty('--swatch', initialColor);
     picker.addEventListener('input', () => b.style.setProperty('--swatch', picker.value));
-    picker.addEventListener('change', () => apply(picker.value));
+    picker.addEventListener('change', () => apply(picker.value, true));
     // The native swatch is hidden inside a small ▾ that opens the palette.
     const caret = document.createElement('label');
     caret.className = 'tool tool-caret';
@@ -333,6 +364,14 @@ export function makeToolbar(el, editor) {
 // ponytail: .doc, not .docx; a real .docx needs a zip library.
 // PDF goes through the browser's print dialog ("Save as PDF"); print CSS hides everything but the text.
 // A code document is exported as one <pre> rebuilt from its text, not the on-screen view.
+function save(blob, name) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
 export function bindDownloads(getHtml, editor) {
   const docHtml = () => {
     const c = parseCode(editor.text);
@@ -340,12 +379,20 @@ export function bindDownloads(getHtml, editor) {
   };
   $('dl-doc').addEventListener('click', () => {
     const html = `<html><head><meta charset="utf-8"></head><body style="white-space:pre-wrap">${docHtml()}</body></html>`;
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob(['﻿', html], { type: 'application/msword' }));
-    a.download = 'devshire.doc';
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    save(new Blob(['﻿', html], { type: 'application/msword' }), 'devshire.doc');
     $('dl-doc').closest('details').open = false;
+  });
+  // In code mode the menu also offers the code as a source file (.py, .go, ...).
+  const menu = $('dl-src').closest('details');
+  menu.addEventListener('toggle', () => {
+    const c = menu.open && parseCode(editor.text);
+    $('dl-src').hidden = !c;
+    if (c) $('dl-src').textContent = `${LANGS[c.lang].name} (.${LANGS[c.lang].ext})`;
+  });
+  $('dl-src').addEventListener('click', () => {
+    const c = parseCode(editor.text);
+    if (c) save(new Blob([c.code], { type: 'text/plain' }), `devshire.${LANGS[c.lang].ext}`);
+    menu.open = false;
   });
   $('dl-pdf').addEventListener('click', () => {
     $('dl-pdf').closest('details').open = false;

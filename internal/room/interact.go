@@ -105,6 +105,7 @@ func (r *Room) setHand(id string, up bool) {
 	}
 	r.sendViewer(id, encode(handMsg{"hand", up}))
 	r.sendHands()
+	r.sendWatchers()
 }
 
 func (r *Room) sendHands() {
@@ -137,6 +138,7 @@ func (r *Room) Ask(c *Client, name, text string) error {
 	if len(r.questions) >= limits.MaxQuestions {
 		return ErrQuestionsFull
 	}
+	r.setName(c.viewerID, cleanName(name))
 	r.nextQ++
 	r.questions = append(r.questions, question{
 		ID: strconv.Itoa(r.nextQ), Name: cleanName(name), Text: text, viewerID: c.viewerID,

@@ -4,6 +4,60 @@ All notable changes to LiveType are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [4.0.1] - 2026-11-26
+
+### Added
+- **Download code as a source file:** in code mode the Download menu offers
+  the code as a file for its language, such as `devshire.py` or `devshire.go`.
+- **Watching list** on the host page: everyone connected, by name, with ✋ for
+  a raised hand and "Writing" for whoever holds the pen. Viewers who have not
+  typed a name show as "Guest 1", "Guest 2" and so on.
+- Viewers' names are remembered and shared as soon as they type one, in either
+  the question or the write-request form.
+
+### Changed
+- Dropdowns (Text/language, font, size, case) have one consistent look. In
+  Chromium-based browsers the open list is styled too.
+- Host toolbar: Replay and Download are icon buttons at the right end of the
+  toolbar, and stay usable while a viewer holds the pen.
+- Viewer page: one name field at the top of the panel, used for questions,
+  write requests and the host's watching list. Request to write sends at once
+  (it asks for a name first if there is none). Only Ask is a filled button.
+  Copy all, Replay and Download are icon buttons, like the host toolbar.
+  A "Questions" heading shows where answers will appear.
+- Share card: the link and its copy button are one box, and the private host link note moved
+  into a small "i" button.
+- Host and viewer pages no longer show the scrolling "What's new" ticker, so
+  nothing moves on screen during a session.
+- Empty panels (write requests, questions, watching) show one short line
+  instead of a large dashed box.
+- Questions: Dismiss is a small × next to Answer, on the same row.
+- On phones the formatting toolbar is one row that scrolls sideways, with
+  Bold, Italic and Underline first, instead of four wrapped rows.
+- Text documents use a normal reading font (System UI) by default instead of
+  monospace. Code mode stays monospace.
+- On phones, notifications appear at the top so they don't cover the panel.
+
+### Removed
+- Change case (Aa) and Clear formatting, which did not work reliably.
+
+### Fixed
+- Highlight colour showed for viewers but not in the writer's own editor, and
+  highlighted text was white on yellow in dark mode. It is now dark and readable.
+- The highlight could not be removed. Clicking the highlight button on
+  highlighted text now removes it; with only the cursor inside a highlight,
+  it turns the highlight off for what you type next. Picking a colour from
+  the palette always applies that colour.
+- Download as PDF no longer switches the page to light mode when the theme
+  follows the system, and the PDF no longer includes the watching list.
+- Subscript and superscript buttons now look different (x₂ and x²).
+- Replay with nothing recorded greys out all its controls and hides the
+  "Host writing" label. The speed menu's "1×" is vertically centred.
+
+### Security
+- The watching list never contains viewer IDs, only names, which are cleaned
+  like other names.
+
 ## [4.0.0] - 2026-11-26
 
 ### Changed
@@ -17,7 +71,7 @@ All notable changes to LiveType are recorded here. The format follows
 ### Fixed
 - The home page no longer says sessions are kept in memory only (untrue since 3.1).
 
- - 2026-11-26
+## [3.1.0] - 2026-11-26
 
 ### Added
 - **Sessions survive restarts and redeploys.** With `DATABASE_URL` set to a
@@ -167,6 +221,7 @@ All notable changes to LiveType are recorded here. The format follows
 - Live typing session with a shareable viewer link, write requests, and host
   approve, deny and take-back controls. Single Go binary with embedded web assets.
 
+[4.0.1]: https://github.com/GaneshBalki/livetype/compare/v4.0.0...v4.0.1
 [4.0.0]: https://github.com/GaneshBalki/livetype/compare/v3.1.0...v4.0.0
 [3.1.0]: https://github.com/GaneshBalki/livetype/compare/v3.0.1...v3.1.0
 [3.0.1]: https://github.com/GaneshBalki/livetype/compare/v3.0.0...v3.0.1

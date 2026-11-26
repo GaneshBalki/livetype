@@ -37,6 +37,7 @@ function onMessage(m) {
     case 'welcome':
       viewerId = m.viewerId;
       save(viewerId);
+      sendName();
       editor.welcome(m.text, m.role === 'writer');
       showText(m.text);
       request = 'none'; // a pending request is re-announced right after welcome
@@ -73,6 +74,7 @@ function onMessage(m) {
       break;
     case 'questions':
       renderQuestions($('questions'), m.list);
+      $('no-questions').hidden = m.list.length > 0;
       break;
     case 'error':
       if (m.code !== 'not_writer') toast(m.message); // not_writer only happens in a hand-over race
@@ -104,7 +106,6 @@ function render() {
   $('hand-label').textContent = handUp ? 'Lower hand' : 'Raise hand';
   $('request-btn').hidden = writing || !(request === 'none' || request === 'denied');
   $('denied').hidden = writing || request !== 'denied';
-  $('request-form').hidden = writing || request !== 'form';
   $('waiting').hidden = writing || request !== 'pending';
   $('stop-writing').hidden = !writing;
 }
@@ -120,16 +121,11 @@ function showCount(n) {
 }
 
 $('request-btn').addEventListener('click', () => {
-  request = 'form';
-  render();
-  $('name').focus();
-});
-$('cancel-form').addEventListener('click', () => {
-  request = 'none';
-  render();
-});
-$('request-form').addEventListener('submit', (e) => {
-  e.preventDefault();
+  if (!$('name').value.trim()) {
+    toast('Add your name first, so the host knows who is asking.');
+    $('name').focus();
+    return;
+  }
   conn.send({ type: 'request_write', name: $('name').value });
 });
 $('cancel-request').addEventListener('click', () => conn.send({ type: 'cancel_request' }));
@@ -146,11 +142,18 @@ for (const b of document.querySelectorAll('[data-emoji]')) {
 }
 $('replay-btn').addEventListener('click', () => conn.send({ type: 'history' }));
 $('hand-btn').addEventListener('click', () => conn.send({ type: 'hand', up: !handUp }));
+// One name for questions, write requests and the host's "Watching" list.
+const nameKey = 'livetype:name';
+const sendName = () => $('name').value.trim() && conn.send({ type: 'name', name: $('name').value });
+$('name').addEventListener('change', (e) => {
+  try { localStorage.setItem(nameKey, e.target.value); } catch { /* storage blocked: the name lasts this visit */ }
+  sendName();
+});
+try { $('name').value = localStorage.getItem(nameKey) || ''; } catch { /* see above */ }
+
 $('ask-form').addEventListener('submit', (e) => {
   e.preventDefault();
-  const name = $('ask-name').value || $('name').value;
-  if (conn.send({ type: 'ask', name, text: $('ask-text').value })) $('ask-text').value = '';
-  if (!$('name').value) $('name').value = name; // one name for questions and write requests
+  if (conn.send({ type: 'ask', name: $('name').value, text: $('ask-text').value })) $('ask-text').value = '';
 });
 $('autoscroll').addEventListener('change', (e) => {
   if (e.target.checked) pre.scrollTop = pre.scrollHeight;

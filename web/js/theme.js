@@ -13,7 +13,11 @@
     if (btn) btn.setAttribute('aria-pressed', theme === 'dark');
   };
   apply(saved || (system.matches ? 'dark' : 'light'));
-  system.addEventListener('change', (e) => { if (!saved) apply(e.matches ? 'dark' : 'light'); });
+  // Printing reports a light system theme; ignore it so Download as PDF doesn't flip the page.
+  const printing = matchMedia('print');
+  const follow = () => { if (!saved && !printing.matches) apply(system.matches ? 'dark' : 'light'); };
+  system.addEventListener('change', follow);
+  addEventListener('afterprint', follow);
 
   addEventListener('DOMContentLoaded', () => {
     const btn = document.getElementById('theme-toggle');
