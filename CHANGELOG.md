@@ -4,6 +4,25 @@ All notable changes to LiveType are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [3.0.0] - 2026-11-26
+
+### Added
+- **Developer mode:** the writer picks a language from the new "Text / language"
+  menu at the start of the toolbar. The document then shows as code with syntax
+  colours, line numbers and a Copy code button, for everyone watching and in Replay.
+  Languages: JavaScript, TypeScript, Python, Go, Rust, Java, C, C++, C#, SQL,
+  Shell, JSON and plain code.
+- Code editing: Tab indents (Escape then Tab leaves the editor), Enter keeps the
+  indent and adds one level after `{`, `[`, `(` or `:`.
+- Switching back to Text keeps the text. Font and colour tools are hidden while
+  the document is code, since code has no formatting.
+- Downloads of a code document contain the plain code.
+
+### Notes
+- No server changes: a code document is stored as a single `<pre>` element.
+  Highlighting is a small built-in tokenizer, not a full parser, so unusual
+  syntax can be coloured wrong. Automatic code formatting is not included.
+
 ## [2.3.1] - 2026-11-26
 
 ### Fixed
@@ -107,6 +126,7 @@ All notable changes to LiveType are recorded here. The format follows
 - Live typing session with a shareable viewer link, write requests, and host
   approve, deny and take-back controls. Single Go binary with embedded web assets.
 
+[3.0.0]: https://github.com/GaneshBalki/livetype/compare/v2.3.1...v3.0.0
 [2.3.1]: https://github.com/GaneshBalki/livetype/compare/v2.3.0...v2.3.1
 [2.3.0]: https://github.com/GaneshBalki/livetype/compare/v2.2.0...v2.3.0
 [2.2.0]: https://github.com/GaneshBalki/livetype/compare/v2.1.0...v2.2.0

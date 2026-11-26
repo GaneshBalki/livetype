@@ -1,4 +1,5 @@
 import { showReplay } from './replay.js';
+import { parseCode } from './code.js';
 import { $, roomId, connect, makeEditor, makeToolbar, bindDownloads, floatReaction, renderQuestions, render as renderHtml, toast, copy, setStatus, plural } from './common.js';
 
 const storageKey = `livetype:${roomId}`;
@@ -28,7 +29,7 @@ const conn = connect({
   },
 });
 const editor = makeEditor(textarea, conn, () => toast('Text is over 200 KB. Changes are not being sent.'));
-const toolbar = makeToolbar(textarea);
+const toolbar = makeToolbar(textarea, editor);
 textarea.before(toolbar.el);
 
 function onMessage(m) {
@@ -137,8 +138,8 @@ $('stop-writing').addEventListener('click', () => {
   conn.send({ type: 'release_write' });
 });
 
-$('copy-all').addEventListener('click', () => copy((editor.writable ? textarea : pre).innerText));
-bindDownloads(() => (editor.writable ? textarea : pre).innerHTML);
+$('copy-all').addEventListener('click', () => copy(parseCode(editor.text)?.code ?? (editor.writable ? textarea : pre).innerText));
+bindDownloads(() => (editor.writable ? textarea : pre).innerHTML, editor);
 
 for (const b of document.querySelectorAll('[data-emoji]')) {
   b.addEventListener('click', () => conn.send({ type: 'react', emoji: b.dataset.emoji }));

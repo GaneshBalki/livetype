@@ -13,6 +13,9 @@ with the web assets embedded.
 
 - Audience interaction: emoji reactions, raise hand, and questions the host
   answers or dismisses. Kept separate from the document.
+- Developer mode: switch the document to code (JavaScript, TypeScript, Python,
+  Go, Rust, Java, C, C++, C#, SQL, Shell, JSON) for syntax colours, line
+  numbers, auto-indent and a Copy code button.
 - Replay: watch how the text was typed, with a timeline and speed control.
 - Live rich text: font, size, bold, italic, underline, strikethrough,
   sub/superscript, change case, font and highlight colors.

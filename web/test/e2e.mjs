@@ -192,6 +192,25 @@ check('answer reaches viewer', await until(() => V(`document.querySelector('#que
 await H(`[...document.querySelectorAll('#questions button')].find((b) => b.textContent === 'Dismiss').click()`);
 check('dismiss clears it for viewer', await until(() => V(`document.querySelectorAll('#questions li').length === 0`)));
 
+// --- developer mode (code documents)
+await choose('Text or code', 'python');
+check('code mode shows the code editor', await until(() => H(`!!document.querySelector('#editor .code-input') && document.querySelectorAll('.toolbar .tool-group[hidden]').length === 3`)));
+await H(`(() => { const t = document.querySelector('#editor .code-input'); t.focus(); t.select(); document.execCommand('insertText', false, 'def hi(name):'); t.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true })); document.execCommand('insertText', false, "return 'x' + 42  # done"); })()`);
+check('Enter auto-indents after a colon', await H(`document.querySelector('#editor .code-input').value`) === "def hi(name):\n    return 'x' + 42  # done", await H(`document.querySelector('#editor .code-input').value`));
+const vcode = (sel) => V(`[...document.querySelectorAll('#text ${sel}')].map((e) => e.textContent).join('|')`);
+check('viewer sees highlighted keywords', await until(async () => (await vcode('.tok-k')) === 'def|return'), await vcode('.tok-k'));
+check('viewer sees strings, numbers, comments, functions', (await vcode('.tok-s')) === "'x'" && (await vcode('.tok-n')) === '42' && (await vcode('.tok-c')) === '# done' && (await vcode('.tok-f')) === 'hi', [await vcode('.tok-s'), await vcode('.tok-n'), await vcode('.tok-c'), await vcode('.tok-f')].join(' '));
+check('viewer sees line numbers and language', (await vcode('.code-gutter')) === '1\n2' && (await vcode('.code-lang')) === 'Python');
+check('host editor highlights while typing', await H(`document.querySelector('#editor .code-hl .tok-k')?.textContent === 'def'`));
+const cdoc = await H(`new Promise((res) => { const orig = URL.createObjectURL; URL.createObjectURL = (b) => { b.text().then(res); return orig(b); }; document.getElementById('dl-doc').click(); })`);
+check('.doc download of code is the plain code', /<pre data-lang="python">def hi\(name\):\n    return 'x' \+ 42  # done<\/pre>/.test(cdoc) && !/code-gutter|Copy code/.test(cdoc), cdoc.slice(0, 300));
+check('code view never runs markup', await V(`import('/js/sanitize.js').then(({ render }) => { const d = document.createElement('div'); render(d, '<pre data-lang="go"><img src=x onerror="window.pwned=1">x</pre>'); return !d.querySelector('img') && d.querySelector('.code-hl').textContent.includes('x'); })`));
+writeFileSync(`${OUT}/code-viewer.png`, Buffer.from((await viewer.send('Page.captureScreenshot', {})).result.data, 'base64'));
+writeFileSync(`${OUT}/code-host.png`, Buffer.from((await host.send('Page.captureScreenshot', {})).result.data, 'base64'));
+await choose('Text or code', '');
+check('switching back to Text keeps the text', await until(async () => !(await V(`!!document.querySelector('#text .code')`)) && /def hi\(name\):/.test(await V(`document.getElementById('text').textContent`))), await viewHtml());
+check('formatting tools return in Text mode', await H(`document.querySelectorAll('.toolbar .tool-group[hidden]').length === 0`));
+
 // --- dark mode
 const before = await H(`document.documentElement.dataset.theme`);
 await click('#theme-toggle');

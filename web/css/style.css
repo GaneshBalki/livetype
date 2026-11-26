@@ -811,3 +811,25 @@ main.doc { flex: 1; }
   input[type="range"] { width: 72px; }
   .text { padding: 16px 18px; }
 }
+
+/* ---------- developer mode: code documents ---------- */
+:root { --tok-k: #7c3aed; --tok-s: #15803d; --tok-n: #b45309; --tok-c: #6b7280; --tok-f: #2563eb; --tok-t: #0e7490; }
+:root[data-theme="dark"] { --tok-k: #c4b5fd; --tok-s: #86efac; --tok-n: #fcd34d; --tok-c: #8b8b9b; --tok-f: #93c5fd; --tok-t: #67e8f9; }
+.tok-k { color: var(--tok-k); font-weight: 600; }
+.tok-s { color: var(--tok-s); }
+.tok-n { color: var(--tok-n); }
+.tok-c { color: var(--tok-c); font-style: italic; }
+.tok-f { color: var(--tok-f); }
+.tok-t { color: var(--tok-t); }
+select.tool.mode { font-weight: 600; }
+.text.has-code { padding: 16px; }
+.code { border: 1px solid var(--border); border-radius: 10px; background: var(--surface-2); color: var(--fg); overflow: hidden; white-space: normal; font: calc(var(--text-size) * .9)/1.6 var(--mono); }
+.code-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 4px 6px 4px 12px; border-bottom: 1px solid var(--border); font: 600 12px var(--sans); color: var(--muted); }
+.code-body { display: flex; overflow-x: auto; scrollbar-width: thin; }
+.code-gutter, .code-hl, .code-input { margin: 0; padding: 12px 14px; border: 0; font: inherit; letter-spacing: 0; white-space: pre; tab-size: 4; overflow-wrap: normal; }
+.code-gutter { position: sticky; left: 0; z-index: 1; padding-right: 10px; text-align: right; color: var(--muted); background: var(--surface-2); border-right: 1px solid var(--border); user-select: none; }
+.code-stack { position: relative; flex: 1 0 auto; }
+.code-hl { min-height: 100%; }
+.code-input { position: absolute; inset: 0; width: 100%; height: 100%; resize: none; overflow: hidden; background: transparent; color: transparent; caret-color: var(--fg); outline: none; }
+.code-input::selection { background: rgb(99 102 241 / .3); color: transparent; }
+@media print { .code-head { display: none; } .code { border: 0; background: #fff; } .code-gutter { background: #fff; } }

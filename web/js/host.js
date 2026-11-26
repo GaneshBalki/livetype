@@ -26,12 +26,12 @@ function start() {
     },
   });
   const editor = makeEditor($('editor'), conn, () => toast('Text is over 200 KB. Changes are not being sent.'));
-  const toolbar = makeToolbar($('editor'));
+  const toolbar = makeToolbar($('editor'), editor);
   $('editor').before(toolbar.el);
   toolbar.el.append($('replay-btn'), document.querySelector('.download')); // Replay and Download sit at the toolbar's right end
   $('replay-btn').addEventListener('click', () => conn.send({ type: 'history' }));
 
-  bindDownloads(() => $('editor').innerHTML);
+  bindDownloads(() => $('editor').innerHTML, editor);
 
   $('take-back').addEventListener('click', () => conn.send({ type: 'revoke' }));
   $('lower-hands').addEventListener('click', () => conn.send({ type: 'lower_hands' }));
