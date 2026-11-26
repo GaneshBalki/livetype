@@ -4,6 +4,29 @@ All notable changes to LiveType are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [4.1.0] - 2026-11-26
+
+### Added
+- **End session:** the host can end a session for everyone. The text,
+  questions and Replay are deleted at once, and both links stop working.
+- **Privacy page** at devshire.in/privacy: what is stored, who can see a
+  session, and when it is deleted. Linked from the home page footer.
+- Home page: a "Why not just share your screen?" section.
+- A preview card (image, title and description) when devshire.in is shared
+  on WhatsApp, LinkedIn, X and similar apps, and structured data for search engines.
+
+### Changed
+- The example session on the home page is labelled "Example".
+- At most 300 sessions at a time. Replay keeps the most recent 512 KB of a session.
+
+### Security
+- Limits per network: 10 new sessions per 10 minutes and 50 per day,
+  60 open connections, and per session 15 open questions and 8 write requests,
+  so one person cannot block others.
+- The database connection must be encrypted.
+- Browsers are told to always use HTTPS, and camera, microphone and location
+  access are blocked.
+
 ## [4.0.2] - 2026-11-26
 
 ### Fixed
@@ -230,6 +253,7 @@ All notable changes to LiveType are recorded here. The format follows
 - Live typing session with a shareable viewer link, write requests, and host
   approve, deny and take-back controls. Single Go binary with embedded web assets.
 
+[4.1.0]: https://github.com/GaneshBalki/livetype/compare/v4.0.2...v4.1.0
 [4.0.2]: https://github.com/GaneshBalki/livetype/compare/v4.0.1...v4.0.2
 [4.0.1]: https://github.com/GaneshBalki/livetype/compare/v4.0.0...v4.0.1
 [4.0.0]: https://github.com/GaneshBalki/livetype/compare/v3.1.0...v4.0.0

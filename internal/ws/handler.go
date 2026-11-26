@@ -66,7 +66,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer func() { <-wrote }()
 	defer c.Kick(int(websocket.StatusNormalClosure), "")
 	defer rm.Leave(c)
-	readPump(ctx, conn, rm, c)
+	readPump(ctx, conn, h.Rooms, rm, c)
 }
 
 // hello reads the mandatory first message and joins the room.
@@ -94,7 +94,7 @@ func hello(ctx context.Context, conn *websocket.Conn, rm *room.Room, ip string) 
 	return c, err
 }
 
-func readPump(ctx context.Context, conn *websocket.Conn, rm *room.Room, c *room.Client) {
+func readPump(ctx context.Context, conn *websocket.Conn, mgr *room.Manager, rm *room.Room, c *room.Client) {
 	var limiter limits.Limiter
 	for {
 		_, data, err := conn.Read(ctx)
@@ -110,8 +110,14 @@ func readPump(ctx context.Context, conn *websocket.Conn, rm *room.Room, c *room.
 			c.SendError(room.ErrBadMessage)
 			continue
 		}
+		var derr error
+		if m.Type == "end" {
+			derr = mgr.End(rm, c)
+		} else {
+			derr = dispatch(rm, c, m)
+		}
 		var e *room.Error
-		if errors.As(dispatch(rm, c, m), &e) {
+		if errors.As(derr, &e) {
 			c.SendError(e)
 		}
 	}

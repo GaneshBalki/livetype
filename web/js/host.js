@@ -41,6 +41,9 @@ function start() {
   bindDownloads(() => $('editor').innerHTML, editor);
 
   $('take-back').addEventListener('click', () => conn.send({ type: 'revoke' }));
+  $('end-session').addEventListener('click', () => {
+    if (confirm('End this session for everyone? The text, questions and replay are deleted, and both links stop working.')) conn.send({ type: 'end' });
+  });
   $('lower-hands').addEventListener('click', () => conn.send({ type: 'lower_hands' }));
   let hands = 0;
   let questionIds = null; // null until the first list, so a reload does not toast old questions
@@ -186,6 +189,7 @@ function end(reason) {
   $('editor').contentEditable = false;
   for (const c of document.querySelectorAll('.tool-group :is(button, select, input), .requests :is(button, input)')) c.disabled = true;
   $('writer-banner').hidden = true;
+  $('end-session').hidden = true;
   $('ended').textContent = reason;
   $('ended').hidden = false;
 }
