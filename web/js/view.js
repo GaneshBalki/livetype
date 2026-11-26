@@ -1,4 +1,4 @@
-import { $, roomId, connect, makeEditor, toast, copy, setStatus, plural } from './common.js';
+import { $, roomId, connect, makeEditor, makeToolbar, bindDownloads, render as renderHtml, toast, copy, setStatus, plural } from './common.js';
 
 const storageKey = `livetype:${roomId}`;
 const pre = $('text');
@@ -18,7 +18,7 @@ const conn = connect({
     connected = state === 'live';
     if (state === 'ended') {
       ended = true;
-      textarea.readOnly = true;
+      textarea.contentEditable = false;
       $('ended').textContent = reason;
       $('ended').hidden = false;
     }
@@ -26,6 +26,8 @@ const conn = connect({
   },
 });
 const editor = makeEditor(textarea, conn, () => toast('Text is over 200 KB. Changes are not being sent.'));
+const toolbar = makeToolbar(textarea);
+textarea.before(toolbar.el);
 
 function onMessage(m) {
   switch (m.type) {
@@ -68,6 +70,8 @@ function render() {
   const writing = editor.writable && !ended;
   pre.hidden = writing;
   textarea.hidden = !writing;
+  toolbar.el.hidden = !writing;
+  toolbar.setEnabled(writing);
 
   if (ended) setStatus('ended', 'Ended');
   else if (!connected) setStatus('waiting', 'Reconnecting…');
@@ -88,7 +92,7 @@ function render() {
 
 function showText(text) {
   if (editor.writable) return;
-  pre.textContent = text;
+  renderHtml(pre, text);
   if ($('autoscroll').checked) pre.scrollTop = pre.scrollHeight;
 }
 
@@ -115,7 +119,8 @@ $('stop-writing').addEventListener('click', () => {
   conn.send({ type: 'release_write' });
 });
 
-$('copy-all').addEventListener('click', () => copy(editor.text));
+$('copy-all').addEventListener('click', () => copy((editor.writable ? textarea : pre).innerText));
+bindDownloads(() => (editor.writable ? editorEl : pre).innerHTML);
 $('autoscroll').addEventListener('change', (e) => {
   if (e.target.checked) pre.scrollTop = pre.scrollHeight;
 });
