@@ -4,6 +4,12 @@ All notable changes to LiveType are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [3.0.1] - 2026-11-26
+
+### Fixed
+- Viewer page: in code mode the blinking live cursor showed as a stray line
+  below the code box. It is now hidden while the document is code.
+
 ## [3.0.0] - 2026-11-26
 
 ### Added
@@ -126,6 +132,7 @@ All notable changes to LiveType are recorded here. The format follows
 - Live typing session with a shareable viewer link, write requests, and host
   approve, deny and take-back controls. Single Go binary with embedded web assets.
 
+[3.0.1]: https://github.com/GaneshBalki/livetype/compare/v3.0.0...v3.0.1
 [3.0.0]: https://github.com/GaneshBalki/livetype/compare/v2.3.1...v3.0.0
 [2.3.1]: https://github.com/GaneshBalki/livetype/compare/v2.3.0...v2.3.1
 [2.3.0]: https://github.com/GaneshBalki/livetype/compare/v2.2.0...v2.3.0
