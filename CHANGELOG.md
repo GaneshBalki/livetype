@@ -4,7 +4,20 @@ All notable changes to LiveType are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/).
 
-## [3.1.0] - 2026-11-26
+## [4.0.0] - 2026-11-26
+
+### Changed
+- **LiveType is now DevShire** (devshire.in). Existing session links keep working.
+- New look: warm paper and ink colours with one orange accent, a serif
+  headline and a new logo. Dark mode is black with green accents.
+- New home page: one headline, one Start button, a live preview of a session,
+  and three steps that explain how it works.
+- Downloads are named `devshire.doc`.
+
+### Fixed
+- The home page no longer says sessions are kept in memory only (untrue since 3.1).
+
+ - 2026-11-26
 
 ### Added
 - **Sessions survive restarts and redeploys.** With `DATABASE_URL` set to a
@@ -154,6 +167,7 @@ All notable changes to LiveType are recorded here. The format follows
 - Live typing session with a shareable viewer link, write requests, and host
   approve, deny and take-back controls. Single Go binary with embedded web assets.
 
+[4.0.0]: https://github.com/GaneshBalki/livetype/compare/v3.1.0...v4.0.0
 [3.1.0]: https://github.com/GaneshBalki/livetype/compare/v3.0.1...v3.1.0
 [3.0.1]: https://github.com/GaneshBalki/livetype/compare/v3.0.0...v3.0.1
 [3.0.0]: https://github.com/GaneshBalki/livetype/compare/v2.3.1...v3.0.0

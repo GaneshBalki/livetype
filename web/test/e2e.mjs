@@ -217,7 +217,7 @@ const before = await H(`document.documentElement.dataset.theme`);
 await click('#theme-toggle');
 const after = await H(`document.documentElement.dataset.theme`);
 check('toggle flips theme', before !== after && ['light', 'dark'].includes(after), `${before}->${after}`);
-check('dark bg applied', await H(`getComputedStyle(document.body).backgroundColor`) === (after === 'dark' ? 'rgb(11, 11, 16)' : 'rgb(246, 246, 248)'), await H(`getComputedStyle(document.body).backgroundColor`));
+check('dark bg applied', await H(`getComputedStyle(document.body).backgroundColor`) === (after === 'dark' ? 'rgb(9, 12, 10)' : 'rgb(247, 246, 242)'), await H(`getComputedStyle(document.body).backgroundColor`));
 check('aria-pressed tracks theme', await H(`document.getElementById('theme-toggle').getAttribute('aria-pressed')`) === String(after === 'dark'));
 await V(`location.reload()`); await sleep(1500);
 check('theme persists across pages/reload', await V(`document.documentElement.dataset.theme`) === after);
