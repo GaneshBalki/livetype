@@ -13,6 +13,7 @@ let hostOnline = true;
 let writer = null;
 let request = 'none'; // none | form | pending | denied
 let handUp = false;
+let myOpen = new Set(); // IDs of this viewer's unanswered questions
 
 const conn = connect({
   hello: () => ({ type: 'hello', role: 'viewer', viewerId }),
@@ -73,6 +74,9 @@ function onMessage(m) {
       handUp = m.up;
       break;
     case 'questions':
+      // Unanswered questions in the list are this viewer's own, so one that now has an answer is theirs.
+      if (m.list.some((q) => q.answer && myOpen.has(q.id))) toast('The host answered your question.');
+      myOpen = new Set(m.list.filter((q) => !q.answer).map((q) => q.id));
       renderQuestions($('questions'), m.list);
       $('no-questions').hidden = m.list.length > 0;
       break;

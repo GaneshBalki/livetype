@@ -30,7 +30,7 @@ everyone sees your code or text appear as you type. No account, no install, free
 
 ## Privacy and security
 
-- Sessions are deleted after 24 hours.
+- Sessions are deleted after 24 hours. The host can reset the timer, up to 7 days in total.
 - The host link is private. Only its holder controls the session.
 - All traffic is encrypted (HTTPS).
 - Everything viewers send is cleaned before it is shown.

@@ -102,6 +102,7 @@ type Room struct {
 	ID      string
 	keyHash [32]byte // sha256 of the host key; the key itself is never stored
 	created time.Time
+	extended time.Time // set by Reset timer; zero means created + MaxAge
 	grace   time.Duration
 
 	mu         sync.Mutex
@@ -384,8 +385,17 @@ func (r *Room) Close(code int, reason string) {
 	}
 }
 
+// deadline is when the room is deleted, unless the host leaves for longer first.
+// Caller holds r.mu.
+func (r *Room) deadline(maxAge time.Duration) time.Time {
+	if d := r.created.Add(maxAge); d.After(r.extended) {
+		return d
+	}
+	return r.extended
+}
+
 func (r *Room) expired(now time.Time, idleTTL, maxAge time.Duration) bool {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	return now.Sub(r.created) >= maxAge || (r.host == nil && now.Sub(r.hostLeft) >= idleTTL)
+	return !now.Before(r.deadline(maxAge)) || (r.host == nil && now.Sub(r.hostLeft) >= idleTTL)
 }

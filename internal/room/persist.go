@@ -27,6 +27,7 @@ type saved struct {
 	Frames    []frame    `json:"frames"`
 	HistBytes int        `json:"histBytes"`
 	LastFrame time.Time  `json:"lastFrame"`
+	Extended  time.Time  `json:"extended,omitempty"`
 }
 
 // save returns the room's gzipped state if it changed since the last call.
@@ -38,7 +39,7 @@ func (r *Room) save() ([]byte, bool) {
 	}
 	r.dirty = false
 	b := encode(saved{r.keyHash, r.created, r.text, r.rev, r.questions, r.nextQ,
-		r.base, r.baseW, r.baseT, r.recorded, r.frames, r.histBytes, r.lastFrame})
+		r.base, r.baseW, r.baseT, r.recorded, r.frames, r.histBytes, r.lastFrame, r.extended})
 	r.mu.Unlock()
 	var z bytes.Buffer
 	w := gzip.NewWriter(&z)
@@ -75,5 +76,6 @@ func restore(id string, data []byte, grace time.Duration, now time.Time) (*Room,
 	r.questions, r.nextQ = s.Questions, s.NextQ
 	r.base, r.baseW, r.baseT, r.recorded = s.Base, s.BaseW, s.BaseT, s.Recorded
 	r.frames, r.histBytes, r.lastFrame = s.Frames, s.HistBytes, s.LastFrame
+	r.extended = s.Extended
 	return r, nil
 }

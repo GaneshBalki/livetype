@@ -8,6 +8,7 @@ const (
 	MaxMessageBytes = 256 << 10 // websocket read limit
 	MaxViewers      = 200       // viewer connections per room
 	MaxPending      = 20        // pending write requests per room
+	MaxLife         = 7 * 24 * time.Hour // a host can reset the 24 h timer, but no room lives longer
 	MaxRooms        = 300       // ponytail: a maxed-out room holds ~0.7 MB; sized for Render free (512 MB). Raise with a bigger plan.
 	MaxNameRunes    = 24
 

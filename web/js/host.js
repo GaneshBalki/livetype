@@ -44,6 +44,7 @@ function start() {
   $('end-session').addEventListener('click', () => {
     if (confirm('End this session for everyone? The text, questions and replay are deleted, and both links stop working.')) conn.send({ type: 'end' });
   });
+  $('extend').addEventListener('click', () => { if (conn.send({ type: 'extend' })) toast('Session timer reset to 24 hours.'); });
   $('lower-hands').addEventListener('click', () => conn.send({ type: 'lower_hands' }));
   let hands = 0;
   let questionIds = null; // null until the first list, so a reload does not toast old questions
@@ -89,6 +90,9 @@ function start() {
         renderQuestions($('questions'), m.list, questionActions);
         $('no-questions').hidden = m.list.length > 0;
         $('question-count').textContent = m.list.filter((q) => !q.answer).length || '';
+        break;
+      case 'expiry':
+        showExpiry(m);
         break;
       case 'error':
         if (m.code !== 'not_writer') toast(m.message); // not_writer only happens in a hand-over race
@@ -190,6 +194,24 @@ function end(reason) {
   for (const c of document.querySelectorAll('.tool-group :is(button, select, input), .requests :is(button, input)')) c.disabled = true;
   $('writer-banner').hidden = true;
   $('end-session').hidden = true;
+  $('expiry').hidden = true;
+  clearInterval(expiryTimer);
   $('ended').textContent = reason;
   $('ended').hidden = false;
+}
+
+// "Ends in 23h 42m" plus Reset, which restarts the 24 h countdown (server caps at 7 days).
+let expiryTimer;
+function showExpiry({ at, max }) {
+  const tick = () => {
+    const min = Math.max(0, Math.round((at - Date.now()) / 60000));
+    $('expiry-text').textContent = `Ends in ${min >= 60 ? `${Math.floor(min / 60)}h ${min % 60}m` : `${min}m`}`;
+  };
+  tick();
+  clearInterval(expiryTimer);
+  expiryTimer = setInterval(tick, 30000);
+  const full = max - at < 60000; // already at the 7-day limit
+  $('extend').disabled = full;
+  $('extend').title = full ? 'Sessions last at most 7 days.' : 'Keep this session for 24 more hours (up to 7 days in total)';
+  $('expiry').hidden = ended;
 }
