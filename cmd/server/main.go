@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -89,6 +90,13 @@ func routes(mgr *room.Manager, wsh *ws.Handler) *http.ServeMux {
 	mux.HandleFunc("GET /h/{roomId}", page("host.html"))
 	mux.HandleFunc("GET /v/{roomId}", page("view.html"))
 	mux.Handle("GET /ws/{roomId}", wsh)
+	mux.HandleFunc("GET /robots.txt", func(w http.ResponseWriter, _ *http.Request) {
+		io.WriteString(w, "User-agent: *\nDisallow: /h/\nDisallow: /v/\nDisallow: /api/\nSitemap: https://devshire.in/sitemap.xml\n")
+	})
+	mux.HandleFunc("GET /sitemap.xml", func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/xml")
+		io.WriteString(w, `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>https://devshire.in/</loc></url></urlset>`)
+	})
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusOK) })
 	mux.HandleFunc("POST /api/rooms", func(w http.ResponseWriter, _ *http.Request) {
 		id, key, err := mgr.Create()
