@@ -13,6 +13,7 @@ with the web assets embedded.
 
 - Audience interaction: emoji reactions, raise hand, and questions the host
   answers or dismisses. Kept separate from the document.
+- Replay: watch how the text was typed, with a timeline and speed control.
 - Live rich text: font, size, bold, italic, underline, strikethrough,
   sub/superscript, change case, font and highlight colors.
 - Dark mode toggle that remembers your choice.

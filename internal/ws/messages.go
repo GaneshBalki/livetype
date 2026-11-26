@@ -44,6 +44,8 @@ func dispatch(r *room.Room, c *room.Client, m inbound) error {
 		return r.Answer(c, m.ID, m.Text)
 	case "dismiss":
 		return r.Dismiss(c, m.ID)
+	case "history":
+		return r.History(c)
 	default:
 		return room.ErrBadMessage
 	}

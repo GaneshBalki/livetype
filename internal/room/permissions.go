@@ -2,6 +2,7 @@ package room
 
 import (
 	"strings"
+	"time"
 	"unicode"
 
 	"livetype/internal/limits"
@@ -29,6 +30,7 @@ func (r *Room) Update(c *Client, text string) error {
 	}
 	r.text = text
 	r.rev++
+	r.noteEdit(time.Now())
 	c.send(encode(ackMsg{"ack", r.rev}))
 	r.broadcast(r.snapshot(), c)
 	return nil
@@ -41,6 +43,7 @@ func (r *Room) setWriter(id, name, reason string) {
 	if old == id {
 		return
 	}
+	r.record() // the frame before a hand-over keeps the old writer's name
 	r.writerID, r.writerName = id, name
 	if old != "" {
 		r.sendViewer(old, roleChange("viewer", reason))

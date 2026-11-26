@@ -16,6 +16,11 @@ const (
 	MaxOpenQuestions = 3   // unanswered questions per viewer
 	ReactEvery       = 300 * time.Millisecond
 
+	// ponytail: per-room playback cap; 1000 rooms could hold 1 GB. Lower
+	// MaxRooms or move history to disk if memory gets tight.
+	MaxHistoryBytes = 1 << 20
+	HistoryEvery    = 3 * time.Second
+
 	MessagesPerSecond = 30
 	MessageBurst      = 10
 

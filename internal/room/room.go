@@ -48,7 +48,8 @@ type Client struct {
 	host     bool   // set once by JoinHost
 	viewerID string // set once by JoinViewer
 
-	lastReact time.Time // guarded by Room.mu
+	lastReact   time.Time // guarded by Room.mu
+	lastHistory time.Time // guarded by Room.mu
 }
 
 func NewClient() *Client {
@@ -112,6 +113,13 @@ type Room struct {
 	hands      map[string]bool // viewer IDs with a raised hand
 	questions  []question
 	nextQ      int
+
+	// playback record, see history.go
+	base, baseW, recorded string
+	baseT                 int64
+	frames                []frame
+	histBytes             int
+	lastEdit, lastFrame   time.Time
 }
 
 func newRoom(id, hostKey string, grace time.Duration, now time.Time) *Room {
