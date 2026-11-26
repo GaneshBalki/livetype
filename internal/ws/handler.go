@@ -66,6 +66,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer func() { <-wrote }()
 	defer c.Kick(int(websocket.StatusNormalClosure), "")
 	defer rm.Leave(c)
+	h.Rooms.SendExpiry(rm, c)
 	readPump(ctx, conn, h.Rooms, rm, c)
 }
 
@@ -113,6 +114,8 @@ func readPump(ctx context.Context, conn *websocket.Conn, mgr *room.Manager, rm *
 		var derr error
 		if m.Type == "end" {
 			derr = mgr.End(rm, c)
+		} else if m.Type == "extend" {
+			derr = mgr.Extend(rm, c)
 		} else {
 			derr = dispatch(rm, c, m)
 		}

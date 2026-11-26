@@ -48,14 +48,18 @@ func Open(ctx context.Context, url string) (*Store, error) {
 		db.Close()
 		return nil, err
 	}
+	if _, err = db.Exec(ctx, `ALTER TABLE rooms ADD COLUMN IF NOT EXISTS expires timestamptz`); err != nil {
+		db.Close()
+		return nil, err
+	}
 	return &Store{db}, nil
 }
 
 func (s *Store) Close() { s.db.Close() }
 
-func (s *Store) Save(ctx context.Context, id string, created time.Time, data []byte) error {
-	_, err := s.db.Exec(ctx, `INSERT INTO rooms (id, data, created, updated) VALUES ($1, $2, $3, now())
-		ON CONFLICT (id) DO UPDATE SET data = $2, updated = now()`, id, data, created)
+func (s *Store) Save(ctx context.Context, id string, created, expires time.Time, data []byte) error {
+	_, err := s.db.Exec(ctx, `INSERT INTO rooms (id, data, created, updated, expires) VALUES ($1, $2, $3, now(), $4)
+		ON CONFLICT (id) DO UPDATE SET data = $2, updated = now(), expires = $4`, id, data, created, expires)
 	return err
 }
 
@@ -74,9 +78,10 @@ func (s *Store) Delete(ctx context.Context, id string) error {
 	return err
 }
 
-// Prune deletes rooms created more than maxAge ago. Rooms that expire while
+// Prune deletes rooms past their expiry (rows saved before the expires column
+// existed: created more than maxAge ago). Rooms that expire while
 // loaded are deleted by the janitor; ones never reopened after a restart end here.
 func (s *Store) Prune(ctx context.Context, maxAge time.Duration) error {
-	_, err := s.db.Exec(ctx, `DELETE FROM rooms WHERE created < $1`, time.Now().Add(-maxAge))
+	_, err := s.db.Exec(ctx, `DELETE FROM rooms WHERE expires < now() OR (expires IS NULL AND created < $1)`, time.Now().Add(-maxAge))
 	return err
 }

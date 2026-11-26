@@ -4,6 +4,17 @@ All notable changes to LiveType are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [4.2.0] - 2026-11-26
+
+### Added
+- **Session timer:** the host page shows when the session will be deleted
+  ("Ends in 23h 42m"). **Reset** restarts the 24-hour countdown. A session
+  never lasts longer than 7 days.
+- Viewers get a notification when the host answers their question.
+
+### Changed
+- Privacy page and home page describe the timer.
+
 ## [4.1.1] - 2026-11-26
 
 ### Fixed
@@ -260,6 +271,7 @@ All notable changes to LiveType are recorded here. The format follows
 - Live typing session with a shareable viewer link, write requests, and host
   approve, deny and take-back controls. Single Go binary with embedded web assets.
 
+[4.2.0]: https://github.com/GaneshBalki/livetype/compare/v4.1.1...v4.2.0
 [4.1.1]: https://github.com/GaneshBalki/livetype/compare/v4.1.0...v4.1.1
 [4.1.0]: https://github.com/GaneshBalki/livetype/compare/v4.0.2...v4.1.0
 [4.0.2]: https://github.com/GaneshBalki/livetype/compare/v4.0.1...v4.0.2

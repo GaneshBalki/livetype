@@ -429,3 +429,25 @@ func TestRoomCap(t *testing.T) {
 		t.Fatalf("got %v, want ErrTooManyRooms", err)
 	}
 }
+
+func TestExtendCappedAtMaxLife(t *testing.T) {
+	m := NewManager(Config{IdleTTL: time.Hour, MaxAge: 24 * time.Hour})
+	id, key, _ := m.Create()
+	r := m.Get(id)
+	h := NewClient()
+	r.JoinHost(h, key)
+	if m.Extend(r, joinViewer(t, r, "")) != ErrNotHost {
+		t.Fatal("viewer extended the room")
+	}
+	r.created = r.created.Add(-6 * 24 * time.Hour) // pretend it is 6 days old
+	if !r.expired(time.Now(), time.Hour, 24*time.Hour) {
+		t.Fatal("6-day-old room should be expired before a reset")
+	}
+	m.Extend(r, h)
+	if r.expired(time.Now(), time.Hour, 24*time.Hour) {
+		t.Fatal("reset did not extend")
+	}
+	if got, want := r.deadline(24*time.Hour), r.created.Add(7*24*time.Hour); !got.Equal(want) {
+		t.Fatalf("deadline %v, want capped at %v", got, want)
+	}
+}

@@ -866,3 +866,6 @@ button.end-session:hover { background: var(--danger-soft); }
 .why-grid strong { display: block; margin-bottom: 6px; font-size: 15px; }
 .why-grid span { color: var(--muted); font-size: 14px; line-height: 1.55; }
 @media (max-width: 860px) { .why-grid { grid-template-columns: minmax(0, 1fr); } }
+.expiry button { margin-left: 8px; padding: 0; border: 0; background: none; color: var(--accent); font: inherit; font-weight: 600; cursor: pointer; }
+.expiry button:hover { text-decoration: underline; }
+.expiry button:disabled { color: var(--muted); cursor: default; text-decoration: none; }

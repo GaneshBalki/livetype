@@ -108,7 +108,10 @@ func (m *Manager) SaveAll(ctx context.Context) {
 		if !ok {
 			continue
 		}
-		if err := m.store.Save(ctx, r.ID, r.created, data); err != nil {
+		r.mu.Lock()
+		exp := r.deadline(m.cfg.MaxAge)
+		r.mu.Unlock()
+		if err := m.store.Save(ctx, r.ID, r.created, exp, data); err != nil {
 			log.Printf("store: save %s: %v", r.ID, err)
 			r.markDirty()
 		}
@@ -211,5 +214,42 @@ func (m *Manager) End(r *Room, c *Client) error {
 	del()
 	// A save that started just before Close could land after the delete.
 	time.AfterFunc(5*time.Second, del)
+	return nil
+}
+
+type expiryMsg struct {
+	Type string `json:"type"`
+	At   int64  `json:"at"`  // Unix ms when the room is deleted
+	Max  int64  `json:"max"` // Unix ms after which Reset timer cannot extend
+}
+
+// SendExpiry tells the host when the room will be deleted. No-op for viewers.
+func (m *Manager) SendExpiry(r *Room, c *Client) {
+	if !c.host {
+		return
+	}
+	r.mu.Lock()
+	b := encode(expiryMsg{"expiry", r.deadline(m.cfg.MaxAge).UnixMilli(), r.created.Add(limits.MaxLife).UnixMilli()})
+	r.mu.Unlock()
+	c.send(b)
+}
+
+// Extend restarts the room's MaxAge countdown from now, never past
+// created + MaxLife.
+func (m *Manager) Extend(r *Room, c *Client) error {
+	if !c.host {
+		return ErrNotHost
+	}
+	until := time.Now().Add(m.cfg.MaxAge)
+	r.mu.Lock()
+	if max := r.created.Add(limits.MaxLife); until.After(max) {
+		until = max
+	}
+	if until.After(r.extended) {
+		r.extended = until
+		r.dirty = true
+	}
+	r.mu.Unlock()
+	m.SendExpiry(r, c)
 	return nil
 }
