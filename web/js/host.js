@@ -27,6 +27,7 @@ function start() {
   const editor = makeEditor($('editor'), conn, () => toast('Text is over 200 KB. Changes are not being sent.'));
   const toolbar = makeToolbar($('editor'));
   $('editor').before(toolbar.el);
+  toolbar.el.append(document.querySelector('.download')); // Download sits at the toolbar's right end
 
   bindDownloads(() => $('editor').innerHTML);
 
@@ -104,7 +105,7 @@ function end(reason) {
   ended = true;
   setStatus('ended', 'Ended');
   $('editor').contentEditable = false;
-  document.querySelector('.toolbar')?.remove();
+  for (const c of document.querySelectorAll('.tool-group :is(button, select, input)')) c.disabled = true;
   $('writer-banner').hidden = true;
   $('ended').textContent = reason;
   $('ended').hidden = false;

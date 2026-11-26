@@ -344,17 +344,17 @@ body:has(#status[data-state="live"]) .text.live::after { visibility: visible; an
 .toolbar {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px 14px;
-  padding: 8px 12px;
+  gap: 10px 20px;
+  padding: 10px 16px;
   border-bottom: 1px solid var(--border);
   background: var(--surface-2);
 }
-.tool-group { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 2px; }
-.tool-group + .tool-group { padding-left: 14px; border-left: 1px solid var(--border); }
+.tool-group { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.tool-group + .tool-group { padding-left: 20px; border-left: 1px solid var(--border); }
 .tool {
-  height: 30px;
-  min-width: 30px;
-  padding: 0 7px;
+  height: 34px;
+  min-width: 34px;
+  padding: 0 9px;
   border-color: transparent;
   border-radius: 7px;
   background: transparent;
@@ -374,10 +374,52 @@ select.tool {
   cursor: pointer;
 }
 .mark-fg, .mark-hl { padding: 0 2px; border-bottom: 3px solid var(--swatch); line-height: 1.1; }
-.tool-color { width: 16px; height: 30px; margin-left: -4px; padding: 0; border: 0; background: none; cursor: pointer; }
-.tool-color::-webkit-color-swatch-wrapper { padding: 9px 0; }
+.tool-color { width: 18px; height: 34px; margin-left: -4px; padding: 0; border: 0; background: none; cursor: pointer; }
+.tool-color::-webkit-color-swatch-wrapper { padding: 10px 0; }
 .tool-color::-webkit-color-swatch { border: 1px solid var(--border-strong); border-radius: 3px; }
 .toolbar :disabled { opacity: .45; cursor: default; }
+
+/* Scrolling "What's new" ticker in the header's empty middle. Pauses on hover. */
+.news {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  height: 34px;
+  margin: 0 12px;
+  border: 1px solid color-mix(in srgb, var(--accent) 25%, var(--border));
+  border-radius: 999px;
+  background: linear-gradient(100deg, var(--accent-soft), color-mix(in srgb, #9b51e0 10%, transparent), var(--accent-soft));
+  font-size: 13px;
+  overflow: hidden;
+}
+.news-badge {
+  flex: none;
+  align-self: stretch;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 14px;
+  background: linear-gradient(100deg, #5b5bd6, #9b51e0); /* fixed: the dark-theme --grad is too pale for white text */
+  color: #fff;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: .02em;
+}
+.news-viewport {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  mask-image: linear-gradient(90deg, transparent, #000 24px, #000 calc(100% - 24px), transparent);
+}
+.news-track { display: flex; width: max-content; animation: news 40s linear infinite; }
+.news:hover .news-track { animation-play-state: paused; }
+.news-row { display: flex; }
+.news-item { padding: 0 28px; color: var(--muted); white-space: nowrap; }
+.news-item + .news-item, .news-row + .news-row .news-item:first-child { border-left: 1px solid var(--border-strong); }
+.news-item b { margin-right: 6px; color: var(--accent); font-weight: 700; }
+.news strong { color: var(--fg); font-weight: 600; }
+.news kbd { padding: 1px 5px; border: 1px solid var(--border-strong); border-radius: 5px; background: var(--surface); color: var(--fg); font: 11px var(--sans); }
+@keyframes news { to { transform: translateX(-50%); } }
 
 /* Dark mode toggle: show the moon in light mode, the sun in dark mode. */
 .theme-toggle { width: 34px; padding: 0; }
@@ -387,6 +429,7 @@ select.tool {
 
 /* Download menu */
 .download { position: relative; }
+.toolbar > .download { margin-left: auto; align-self: center; }
 .download > summary { list-style: none; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px;
   border: 1px solid var(--border-strong); border-radius: 8px; background: var(--surface); font-size: 13px; font-weight: 550; }
 .download > summary::-webkit-details-marker { display: none; }
@@ -622,6 +665,7 @@ main.doc { flex: 1; }
 /* ---------- small screens ---------- */
 
 @media (max-width: 720px) {
+  .news { display: none; }
   .features { grid-template-columns: minmax(0, 1fr); }
   .hero { padding-top: 24px; }
   .demo { margin-top: 40px; }
