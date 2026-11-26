@@ -4,6 +4,13 @@ All notable changes to LiveType are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [2.3.1] - 2026-11-26
+
+### Fixed
+- Formatting toolbar: the highlight and text colour pickers showed as loose
+  colour boxes that looked like a bug. Each is now one button with a small ▾
+  that opens the palette. The bar under the letter shows the current colour.
+
 ## [2.3.0] - 2026-11-26
 
 ### Added
@@ -100,6 +107,7 @@ All notable changes to LiveType are recorded here. The format follows
 - Live typing session with a shareable viewer link, write requests, and host
   approve, deny and take-back controls. Single Go binary with embedded web assets.
 
+[2.3.1]: https://github.com/GaneshBalki/livetype/compare/v2.3.0...v2.3.1
 [2.3.0]: https://github.com/GaneshBalki/livetype/compare/v2.2.0...v2.3.0
 [2.2.0]: https://github.com/GaneshBalki/livetype/compare/v2.1.0...v2.2.0
 [2.1.0]: https://github.com/GaneshBalki/livetype/compare/v2.0.0...v2.1.0

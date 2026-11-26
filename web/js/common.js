@@ -268,7 +268,12 @@ export function makeToolbar(el) {
     b.style.setProperty('--swatch', initialColor);
     picker.addEventListener('input', () => b.style.setProperty('--swatch', picker.value));
     picker.addEventListener('change', () => apply(picker.value));
-    return [b, picker];
+    // The native swatch is hidden inside a small ▾ that opens the palette.
+    const caret = document.createElement('label');
+    caret.className = 'tool tool-caret';
+    caret.title = `${label}: choose`;
+    caret.append('▾', picker);
+    return [b, caret];
   }
 
   return {

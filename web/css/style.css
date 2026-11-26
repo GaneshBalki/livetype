@@ -374,9 +374,10 @@ select.tool {
   cursor: pointer;
 }
 .mark-fg, .mark-hl { padding: 0 2px; border-bottom: 3px solid var(--swatch); line-height: 1.1; }
-.tool-color { width: 18px; height: 34px; margin-left: -4px; padding: 0; border: 0; background: none; cursor: pointer; }
-.tool-color::-webkit-color-swatch-wrapper { padding: 10px 0; }
-.tool-color::-webkit-color-swatch { border: 1px solid var(--border-strong); border-radius: 3px; }
+.tool-caret { position: relative; width: 16px; min-width: 16px; margin-left: -6px; padding: 0; font-size: 13px; color: var(--muted); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
+.tool-caret:hover { color: var(--fg); }
+.tool-color { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; border: 0; padding: 0; }
+.tool-caret:has(:disabled) { opacity: .45; cursor: default; }
 .toolbar :disabled { opacity: .45; cursor: default; }
 
 /* Scrolling "What's new" ticker in the header's empty middle. Pauses on hover. */
