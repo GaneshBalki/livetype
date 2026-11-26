@@ -1,3 +1,4 @@
+import { showReplay } from './replay.js';
 import { $, roomId, connect, makeEditor, makeToolbar, bindDownloads, floatReaction, renderQuestions, render as renderHtml, toast, copy, setStatus, plural } from './common.js';
 
 const storageKey = `livetype:${roomId}`;
@@ -59,6 +60,9 @@ function onMessage(m) {
     case 'presence':
       hostOnline = m.hostOnline;
       showCount(m.viewerCount);
+      break;
+    case 'history':
+      showReplay(m);
       break;
     case 'reaction':
       floatReaction(m.emoji);
@@ -139,6 +143,7 @@ bindDownloads(() => (editor.writable ? textarea : pre).innerHTML);
 for (const b of document.querySelectorAll('[data-emoji]')) {
   b.addEventListener('click', () => conn.send({ type: 'react', emoji: b.dataset.emoji }));
 }
+$('replay-btn').addEventListener('click', () => conn.send({ type: 'history' }));
 $('hand-btn').addEventListener('click', () => conn.send({ type: 'hand', up: !handUp }));
 $('ask-form').addEventListener('submit', (e) => {
   e.preventDefault();

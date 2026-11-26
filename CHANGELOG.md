@@ -4,6 +4,25 @@ All notable changes to LiveType are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [2.3.0] - 2026-11-26
+
+### Added
+- **Typing playback:** a Replay button on the host and viewer pages opens a
+  player that shows how the text was written: play/pause, restart, speed
+  (0.5×, 1×, 2×, 4×), a timeline to jump to any point, and who was writing at
+  each moment. Pauses longer than 2 seconds are shortened.
+- The server records changes at most once per second as small edits rather
+  than full copies, up to 1 MB per session. Past that, the oldest part is merged
+  into a starting snapshot, so long sessions keep their most recent part.
+
+### Changed
+- Viewer page: reactions, Raise hand, Request to write and questions moved into
+  one panel on the right side of the document (below it on narrow screens).
+
+### Notes
+- Anyone with the viewer link can replay the session from its start, including
+  edits made before they joined. Recordings live in memory and end with the session.
+
 ## [2.2.0] - 2026-11-26
 
 ### Added
@@ -81,6 +100,7 @@ All notable changes to LiveType are recorded here. The format follows
 - Live typing session with a shareable viewer link, write requests, and host
   approve, deny and take-back controls. Single Go binary with embedded web assets.
 
+[2.3.0]: https://github.com/GaneshBalki/livetype/compare/v2.2.0...v2.3.0
 [2.2.0]: https://github.com/GaneshBalki/livetype/compare/v2.1.0...v2.2.0
 [2.1.0]: https://github.com/GaneshBalki/livetype/compare/v2.0.0...v2.1.0
 [2.0.0]: https://github.com/GaneshBalki/livetype/compare/v1.0.0...v2.0.0

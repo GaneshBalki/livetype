@@ -584,19 +584,31 @@ main.doc { flex: 1; }
 .q-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 .q-actions input { flex: 1; min-width: 120px; }
 
-.interact { display: flex; flex-direction: column; gap: 10px; margin: 0; padding: 12px 16px; min-width: 0; }
-.reactions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
-.emoji {
-  width: 38px; height: 38px; padding: 0;
-  border-radius: 50%;
-  font-size: 18px; line-height: 1;
-  transition: transform .12s;
+.interact { display: flex; flex-direction: column; gap: 12px; margin: 0; padding: 12px 14px; min-width: 0; }
+.audience-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.reactions {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-2);
 }
-.emoji:hover:not(:disabled) { transform: scale(1.15); }
-.hand-btn { margin-left: auto; }
+.emoji {
+  width: 36px; height: 36px; padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  font-size: 19px; line-height: 1;
+  transition: transform .12s, background .12s;
+}
+.emoji:hover:not(:disabled) { transform: scale(1.18); background: var(--surface); }
+.emoji:active:not(:disabled) { transform: scale(.95); }
+.hand-btn, .audience-row #request-btn { height: 44px; border-radius: 999px; }
 .hand-btn[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
-.ask-form { display: flex; flex-wrap: wrap; gap: 8px; }
-.ask-form #ask-name { width: 140px; }
+.audience-row .controls { flex: 1; justify-content: flex-end; }
+.ask-form { display: flex; flex-wrap: wrap; gap: 8px; padding-top: 12px; border-top: 1px solid var(--border); }
+.ask-form #ask-name { width: 150px; }
 .ask-form #ask-text { flex: 1; min-width: 180px; }
 .interact .questions { max-height: 22vh; overflow: auto; scrollbar-width: thin; }
 .interact .questions:empty { display: none; }
@@ -617,6 +629,59 @@ main.doc { flex: 1; }
 }
 
 @media print { .interact, .float-emoji { display: none !important; } }
+
+/* Viewer: document on the left, audience panel (react, write, ask) on the right. */
+.view-main {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 14px;
+}
+.view-main > .doc { min-height: 0; }
+.view-main > .interact { align-self: stretch; min-height: 0; overflow: auto; scrollbar-width: thin; }
+.view-main .audience-row .controls { flex: 1 1 100%; justify-content: stretch; }
+.view-main .audience-row #request-btn, .view-main .audience-row #stop-writing { flex: 1; }
+.view-main .hand-btn { flex: 1; height: 40px; }
+.view-main .reactions { flex: 1 1 100%; justify-content: space-between; }
+.view-main .ask-form #ask-name, .view-main .ask-form #ask-text { flex: 1 1 100%; width: auto; }
+.view-main .ask-form button { flex: 1; }
+.view-main .interact .questions { max-height: none; }
+@media (max-width: 900px) {
+  .view-main { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(320px, 1fr) auto; overflow: auto; }
+  .view-main > .interact { overflow: visible; }
+}
+
+/* ---------- replay ---------- */
+
+.toolbar > #replay-btn { margin-left: auto; padding-inline: 9px; }
+.toolbar > #replay-btn .label { display: none; }
+.toolbar > #replay-btn + .download { margin-left: 0; }
+.replay {
+  width: min(860px, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px);
+  padding: 16px;
+  background: var(--surface);
+  color: var(--fg);
+}
+.replay[open] { display: flex; flex-direction: column; gap: 12px; }
+.replay::backdrop { background: rgb(0 0 0 / .6); }
+.replay-head { display: flex; align-items: center; gap: 10px; }
+.replay-head h2 { margin: 0; font-size: 16px; }
+.replay-close { margin-left: auto; }
+.replay-text {
+  min-height: 200px;
+  max-height: 55dvh;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+.replay-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.replay-controls button { min-width: 38px; }
+.replay-seek { flex: 1; min-width: 160px; accent-color: var(--accent); }
+.replay-time { min-width: 84px; color: var(--muted); font: 12.5px var(--mono); text-align: center; }
+.replay-note { margin: 0; color: var(--muted); font-size: 12px; }
+@media print { .replay { display: none !important; } }
 
 /* ---------- landing ---------- */
 

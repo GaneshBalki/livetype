@@ -7,7 +7,7 @@
 //
 // Needs Node 22+ (built-in WebSocket). Not embedded in the server binary.
 import { writeFileSync } from 'node:fs';
-const BASE = 'http://localhost:8080', CDP = 'http://localhost:9333';
+const BASE = process.env.BASE || 'http://localhost:8080', CDP = 'http://localhost:9333';
 const OUT = process.argv[2] || (await import("node:os")).tmpdir();
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 let pass = 0, fail = 0;
@@ -147,6 +147,31 @@ check('viewer formatting reaches host', await until(async () => /italic|<i>/.tes
 await click('#take-back');
 check('host takes back pen', await until(() => H(`document.getElementById('editor').contentEditable === 'true' && !document.querySelector('.toolbar button').disabled`)));
 check('viewer toolbar hidden again', await until(() => V(`document.querySelector('.toolbar').hidden`)));
+
+// --- typing playback
+await sleep(1100); // let the last edit settle into its own frame
+await host.send('Page.bringToFront'); // hidden tabs get no animation frames
+await click('#replay-btn');
+check('replay dialog opens and plays', await until(() => H(`document.querySelector('dialog.replay')?.open && document.querySelector('.replay-play').getAttribute('aria-label') === 'Pause'`)));
+const seekTo = (v, ev = H) => ev(`(() => { const s = document.querySelector('.replay-seek'); s.value = ${v}; s.dispatchEvent(new Event('input')); return document.querySelector('.replay-text').innerHTML; })()`);
+await H(`document.querySelector('.replay-play').click()`); // pause
+const endHtml = await seekTo(`s.max`);
+const liveHtml = await H(`document.getElementById('editor').innerHTML`);
+check('replay end matches the live document', endHtml === liveHtml, `${endHtml} != ${liveHtml}`);
+check('replay shows who was writing', /Tester writing/.test(await H(`document.querySelector('.replay-writer').textContent`)), await H(`document.querySelector('.replay-writer').textContent`));
+const startHtml = await seekTo(0);
+check('replay start is earlier text', startHtml !== endHtml && startHtml.length < endHtml.length, startHtml);
+check('replay time label', /^0:00 \/ \d+:\d\d$/.test(await H(`document.querySelector('.replay-time').textContent`)), await H(`document.querySelector('.replay-time').textContent`));
+await H(`document.querySelector('.replay-speed').value = '4'; document.querySelector('.replay-play').click()`);
+const t0 = Date.now();
+const done = await until(() => H(`document.querySelector('.replay-play').getAttribute('aria-label') === 'Play'`), 15000);
+const total = Number(await H(`document.querySelector('.replay-seek').max`)), took = Date.now() - t0;
+check('4x playback runs to the end at ~4x speed', done && took < total / 4 + 1500 && took > total / 4 - 500, `total ${total}ms took ${took}ms`);
+await H(`document.querySelector('.replay-close').click()`);
+check('replay closes', await H(`!document.querySelector('dialog.replay').open`));
+await click('#replay-btn', V);
+check('viewer can replay too', await until(() => V(`document.querySelector('dialog.replay')?.open`)));
+await V(`document.querySelector('.replay-close').click()`);
 
 // --- reactions, raised hands, questions
 await click('[data-emoji="🎉"]', V);

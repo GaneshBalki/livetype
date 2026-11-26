@@ -1,3 +1,4 @@
+import { showReplay } from './replay.js';
 import { $, roomId, connect, makeEditor, makeToolbar, bindDownloads, floatReaction, renderQuestions, toast, copy, setStatus, plural } from './common.js';
 
 const hostKey = new URLSearchParams(location.hash.slice(1)).get('k');
@@ -27,7 +28,8 @@ function start() {
   const editor = makeEditor($('editor'), conn, () => toast('Text is over 200 KB. Changes are not being sent.'));
   const toolbar = makeToolbar($('editor'));
   $('editor').before(toolbar.el);
-  toolbar.el.append(document.querySelector('.download')); // Download sits at the toolbar's right end
+  toolbar.el.append($('replay-btn'), document.querySelector('.download')); // Replay and Download sit at the toolbar's right end
+  $('replay-btn').addEventListener('click', () => conn.send({ type: 'history' }));
 
   bindDownloads(() => $('editor').innerHTML);
 
@@ -55,6 +57,9 @@ function start() {
         break;
       case 'presence':
         showPresence(m);
+        break;
+      case 'history':
+        showReplay(m);
         break;
       case 'reaction':
         floatReaction(m.emoji);
