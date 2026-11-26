@@ -3,6 +3,7 @@
 package room
 
 import (
+	"crypto/sha256"
 	"crypto/subtle"
 	"encoding/json"
 	"sync"
@@ -95,7 +96,7 @@ type request struct {
 
 type Room struct {
 	ID      string
-	hostKey string
+	keyHash [32]byte // sha256 of the host key; the key itself is never stored
 	created time.Time
 	grace   time.Duration
 
@@ -113,6 +114,7 @@ type Room struct {
 	hands      map[string]bool // viewer IDs with a raised hand
 	questions  []question
 	nextQ      int
+	dirty      bool // changed since the last save, see persist.go
 
 	// playback record, see history.go
 	base, baseW, recorded string
@@ -124,7 +126,7 @@ type Room struct {
 
 func newRoom(id, hostKey string, grace time.Duration, now time.Time) *Room {
 	return &Room{
-		ID: id, hostKey: hostKey, created: now, grace: grace,
+		ID: id, keyHash: sha256.Sum256([]byte(hostKey)), created: now, grace: grace,
 		hostLeft: now, // a host that never connects counts as gone since creation
 		viewers:  map[string]*viewer{},
 		hands:    map[string]bool{},
@@ -243,7 +245,7 @@ func (r *Room) broadcastPresence() {
 // JoinHost attaches c as the host. A previous host connection is closed, so
 // two host tabs never both hold the pen.
 func (r *Room) JoinHost(c *Client, key string) error {
-	if subtle.ConstantTimeCompare([]byte(key), []byte(r.hostKey)) != 1 {
+	if h := sha256.Sum256([]byte(key)); subtle.ConstantTimeCompare(h[:], r.keyHash[:]) != 1 {
 		return ErrBadKey
 	}
 	r.mu.Lock()

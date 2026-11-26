@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"livetype/internal/room"
+	"livetype/internal/store"
 	"livetype/internal/ws"
 	"livetype/web"
 )
@@ -36,6 +37,22 @@ func main() {
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
+	// With DATABASE_URL set, sessions are saved to Postgres and survive
+	// restarts and redeploys; without it they live in memory only.
+	if url := os.Getenv("DATABASE_URL"); url != "" {
+		octx, cancel := context.WithTimeout(ctx, 30*time.Second)
+		st, err := store.Open(octx, url)
+		cancel()
+		if err != nil {
+			log.Fatalf("database: %v", err)
+		}
+		defer st.Close()
+		mgr.UseStore(st)
+		go mgr.RunSaver(ctx, 2*time.Second)
+		log.Print("saving sessions to the database")
+	} else {
+		log.Print("DATABASE_URL not set: sessions are lost on restart")
+	}
 	go mgr.RunJanitor(ctx, time.Minute)
 	go func() {
 		log.Printf("listening on :%s", port)
@@ -51,6 +68,7 @@ func main() {
 	if err := srv.Shutdown(sctx); err != nil {
 		log.Printf("http shutdown: %v", err)
 	}
+	mgr.SaveAll(sctx) // before disconnecting, so reconnecting clients find the latest text
 	mgr.CloseAll()
 	done := make(chan struct{})
 	go func() { wsh.Wait(); close(done) }()

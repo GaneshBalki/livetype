@@ -16,6 +16,7 @@ with the web assets embedded.
 - Developer mode: switch the document to code (JavaScript, TypeScript, Python,
   Go, Rust, Java, C, C++, C#, SQL, Shell, JSON) for syntax colours, line
   numbers, auto-indent and a Copy code button.
+- Sessions survive restarts and redeploys when a database is set (see below).
 - Replay: watch how the text was typed, with a timeline and speed control.
 - Live rich text: font, size, bold, italic, underline, strikethrough,
   sub/superscript, change case, font and highlight colors.
@@ -32,3 +33,20 @@ go test ./...
 ```
 
 Browser tests: see the header of `web/test/e2e.mjs`.
+
+## Saving sessions (optional)
+
+Without a database, sessions live in memory and are lost when the server
+restarts or redeploys. Set `DATABASE_URL` to a Postgres connection string and
+sessions are saved every 2 seconds and on shutdown, then restored when someone
+reconnects. The table is created automatically.
+
+What survives: the text, questions and answers, and the Replay recording. After
+a restart the pen goes back to the host, and raised hands and pending write
+requests are cleared. Host keys are stored only as a SHA-256 hash.
+
+Free option: [Neon](https://neon.tech). Create a project, copy the connection
+string, and add it in Render under the service's **Environment** settings as
+`DATABASE_URL`.
+
+To run the database test locally: `TEST_DATABASE_URL=postgres://... go test ./...`

@@ -204,6 +204,7 @@ func (r *Room) questionsFor(c *Client) []byte {
 }
 
 func (r *Room) sendQuestions() {
+	r.dirty = true // every question change ends here
 	if r.host != nil {
 		r.host.send(r.questionsFor(r.host))
 	}

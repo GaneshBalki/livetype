@@ -30,6 +30,7 @@ func (r *Room) Update(c *Client, text string) error {
 	}
 	r.text = text
 	r.rev++
+	r.dirty = true
 	r.noteEdit(time.Now())
 	c.send(encode(ackMsg{"ack", r.rev}))
 	r.broadcast(r.snapshot(), c)
