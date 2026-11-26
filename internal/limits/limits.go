@@ -11,6 +11,11 @@ const (
 	MaxRooms        = 1000
 	MaxNameRunes    = 24
 
+	MaxQuestionRunes = 280 // question or answer length
+	MaxQuestions     = 50  // questions kept per room
+	MaxOpenQuestions = 3   // unanswered questions per viewer
+	ReactEvery       = 300 * time.Millisecond
+
 	MessagesPerSecond = 30
 	MessageBurst      = 10
 

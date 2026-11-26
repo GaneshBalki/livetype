@@ -47,6 +47,8 @@ type Client struct {
 
 	host     bool   // set once by JoinHost
 	viewerID string // set once by JoinViewer
+
+	lastReact time.Time // guarded by Room.mu
 }
 
 func NewClient() *Client {
@@ -107,6 +109,9 @@ type Room struct {
 	viewers    map[string]*viewer
 	conns      int // viewer connections across all viewers
 	pending    []request
+	hands      map[string]bool // viewer IDs with a raised hand
+	questions  []question
+	nextQ      int
 }
 
 func newRoom(id, hostKey string, grace time.Duration, now time.Time) *Room {
@@ -114,6 +119,7 @@ func newRoom(id, hostKey string, grace time.Duration, now time.Time) *Room {
 		ID: id, hostKey: hostKey, created: now, grace: grace,
 		hostLeft: now, // a host that never connects counts as gone since creation
 		viewers:  map[string]*viewer{},
+		hands:    map[string]bool{},
 	}
 }
 
@@ -244,6 +250,8 @@ func (r *Room) JoinHost(c *Client, key string) error {
 	r.host = c
 	c.send(r.welcome(c, "host"))
 	r.sendRequests()
+	r.sendHands()
+	c.send(r.questionsFor(c))
 	r.broadcastPresence()
 	return nil
 }
@@ -281,6 +289,10 @@ func (r *Room) JoinViewer(c *Client, id string) error {
 	if r.pendingIndex(id) >= 0 {
 		c.send(requestState("pending"))
 	}
+	if r.hands[id] {
+		c.send(encode(handMsg{"hand", true}))
+	}
+	c.send(r.questionsFor(c))
 	r.broadcastPresence()
 	return nil
 }
@@ -333,6 +345,10 @@ func (r *Room) forget(id string) {
 	}
 	if r.writerID == id {
 		r.setWriter("", "", "")
+	}
+	if r.hands[id] {
+		delete(r.hands, id)
+		r.sendHands()
 	}
 }
 

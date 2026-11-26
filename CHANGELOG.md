@@ -4,6 +4,26 @@ All notable changes to LiveType are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [2.2.0] - 2026-11-26
+
+### Added
+- **Reactions:** viewers send one of six emoji, which float up on every screen.
+  Limited to one reaction per 300 ms per connection.
+- **Raise hand:** viewers raise or lower a hand. The host sees how many hands
+  are up, gets a notification, and can lower them all.
+- **Questions:** viewers ask questions (max 280 characters, 3 open per viewer,
+  50 per session). The host sees them in the side panel, with a notification,
+  and can answer or dismiss each one. A question is visible only to the host and
+  the asker until it is answered, then to every viewer.
+
+### Fixed
+- Viewer page: Download as Word failed while the viewer held the pen.
+
+### Security
+- Reactions are limited to a fixed emoji set, so they cannot carry text.
+- Questions and answers are cleaned of control characters on the server and
+  shown as plain text, never HTML. Viewer IDs are never sent to other clients.
+
 ## [2.1.0] - 2026-11-26
 
 ### Added
@@ -61,6 +81,7 @@ All notable changes to LiveType are recorded here. The format follows
 - Live typing session with a shareable viewer link, write requests, and host
   approve, deny and take-back controls. Single Go binary with embedded web assets.
 
+[2.2.0]: https://github.com/GaneshBalki/livetype/compare/v2.1.0...v2.2.0
 [2.1.0]: https://github.com/GaneshBalki/livetype/compare/v2.0.0...v2.1.0
 [2.0.0]: https://github.com/GaneshBalki/livetype/compare/v1.0.0...v2.0.0
 [1.0.0]: https://github.com/GaneshBalki/livetype/releases/tag/v1.0.0
