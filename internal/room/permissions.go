@@ -69,11 +69,17 @@ func (r *Room) RequestWrite(c *Client, name string) error {
 	if r.writerID == c.viewerID {
 		return nil
 	}
-	req := request{c.viewerID, cleanName(name)}
+	req := request{c.viewerID, cleanName(name), c.IP}
 	r.setName(c.viewerID, req.Name)
+	fromIP := 0
+	for _, p := range r.pending {
+		if p.ip == c.IP {
+			fromIP++
+		}
+	}
 	if i := r.pendingIndex(c.viewerID); i >= 0 {
 		r.pending[i] = req // a repeated request replaces the old one
-	} else if len(r.pending) >= limits.MaxPending {
+	} else if len(r.pending) >= limits.MaxPending || fromIP >= limits.MaxPendingPerIP {
 		return ErrQueueFull
 	} else {
 		r.pending = append(r.pending, req)

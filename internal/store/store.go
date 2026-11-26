@@ -5,6 +5,7 @@ package store
 import (
 	"context"
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -15,7 +16,25 @@ type Store struct{ db *pgxpool.Pool }
 
 // Open connects and creates the table if needed.
 func Open(ctx context.Context, url string) (*Store, error) {
-	db, err := pgxpool.New(ctx, url)
+	cfg, err := pgxpool.ParseConfig(url)
+	if err != nil {
+		return nil, errors.New("DATABASE_URL is not a valid Postgres URL") // the parse error can echo the password
+	}
+	// A remote database is only reached over TLS. pgx's default, sslmode=prefer,
+	// would silently fall back to plain text, so drop those fallbacks.
+	if h := cfg.ConnConfig.Host; h != "localhost" && h != "127.0.0.1" && !strings.HasPrefix(h, "/") {
+		if cfg.ConnConfig.TLSConfig == nil {
+			return nil, errors.New("DATABASE_URL turns off TLS (sslmode=disable); use sslmode=require")
+		}
+		tlsOnly := cfg.ConnConfig.Fallbacks[:0]
+		for _, f := range cfg.ConnConfig.Fallbacks {
+			if f.TLSConfig != nil {
+				tlsOnly = append(tlsOnly, f)
+			}
+		}
+		cfg.ConnConfig.Fallbacks = tlsOnly
+	}
+	db, err := pgxpool.NewWithConfig(ctx, cfg)
 	if err != nil {
 		return nil, err
 	}

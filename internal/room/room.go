@@ -48,6 +48,7 @@ type Client struct {
 
 	host     bool   // set once by JoinHost
 	viewerID string // set once by JoinViewer
+	IP       string // visitor's network, set before joining; caps per-network spam
 
 	lastReact   time.Time // guarded by Room.mu
 	lastHistory time.Time // guarded by Room.mu
@@ -94,6 +95,7 @@ type viewer struct {
 type request struct {
 	ViewerID string `json:"viewerId"`
 	Name     string `json:"name"`
+	ip       string
 }
 
 type Room struct {

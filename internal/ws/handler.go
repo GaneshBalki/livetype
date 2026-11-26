@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"net"
 	"net/http"
 	"sync"
 	"time"
@@ -41,7 +42,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		conn.Close(room.CloseTerminal, room.ErrClosed.Message)
 		return
 	}
-	c, err := hello(ctx, conn, rm)
+	c, err := hello(ctx, conn, rm, ClientIP(r))
 	if err != nil {
 		var e *room.Error
 		if !errors.As(err, &e) {
@@ -69,7 +70,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 // hello reads the mandatory first message and joins the room.
-func hello(ctx context.Context, conn *websocket.Conn, rm *room.Room) (*room.Client, error) {
+func hello(ctx context.Context, conn *websocket.Conn, rm *room.Room, ip string) (*room.Client, error) {
 	hctx, cancel := context.WithTimeout(ctx, limits.HelloTimeout)
 	defer cancel()
 	_, data, err := conn.Read(hctx)
@@ -81,6 +82,7 @@ func hello(ctx context.Context, conn *websocket.Conn, rm *room.Room) (*room.Clie
 		return nil, room.ErrBadMessage
 	}
 	c := room.NewClient()
+	c.IP = ip
 	switch m.Role {
 	case "host":
 		err = rm.JoinHost(c, m.HostKey)
@@ -142,4 +144,17 @@ func writePump(ctx context.Context, conn *websocket.Conn, c *room.Client) {
 			return
 		}
 	}
+}
+
+// ClientIP is the visitor's address. Render serves through Cloudflare, which
+// sets CF-Connecting-IP and overwrites any value the client sent.
+func ClientIP(r *http.Request) string {
+	if ip := r.Header.Get("CF-Connecting-IP"); ip != "" {
+		return ip
+	}
+	host, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err != nil {
+		return r.RemoteAddr
+	}
+	return host
 }

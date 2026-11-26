@@ -3,6 +3,7 @@ package room
 import (
 	"encoding/json"
 	"errors"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -286,10 +287,34 @@ func TestDuplicateRequestReplaces(t *testing.T) {
 
 func TestPendingRequestLimit(t *testing.T) {
 	r, _ := newTestRoom(t)
-	for range limits.MaxPending {
-		requestWrite(t, r, joinViewer(t, r, ""), "v")
+	for i := range limits.MaxPending {
+		c := joinViewer(t, r, "")
+		c.IP = strconv.Itoa(i)
+		requestWrite(t, r, c, "v")
 	}
 	wantErr(t, r.RequestWrite(joinViewer(t, r, ""), "one too many"), ErrQueueFull)
+}
+
+// One network reconnecting as many viewers cannot fill the room's lists.
+func TestPerIPLimits(t *testing.T) {
+	r, _ := newTestRoom(t)
+	for range limits.MaxPendingPerIP {
+		requestWrite(t, r, joinViewer(t, r, ""), "bot")
+	}
+	wantErr(t, r.RequestWrite(joinViewer(t, r, ""), "bot"), ErrQueueFull)
+	other := joinViewer(t, r, "")
+	other.IP = "elsewhere"
+	requestWrite(t, r, other, "real")
+
+	for i := 0; i < limits.MaxOpenQuestionsPerIP; i++ {
+		if err := r.Ask(joinViewer(t, r, ""), "bot", "spam"); err != nil {
+			t.Fatal(err)
+		}
+	}
+	wantErr(t, r.Ask(joinViewer(t, r, ""), "bot", "spam"), ErrNetworkAsked)
+	if err := r.Ask(other, "real", "real question"); err != nil {
+		t.Fatal(err)
+	}
 }
 
 func TestViewerLimit(t *testing.T) {

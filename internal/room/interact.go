@@ -17,6 +17,7 @@ var (
 	ErrTooFast       = &Error{"rate_limited", "Slow down a little."}
 	ErrEmptyQuestion = &Error{"bad_message", "Type a question first."}
 	ErrTooManyAsked  = &Error{"room_full", "You have 3 open questions. Wait for an answer first."}
+	ErrNetworkAsked  = &Error{"room_full", "Too many open questions from your network. Wait for answers first."}
 	ErrQuestionsFull = &Error{"room_full", "The question list is full, try again later."}
 	ErrNoQuestion    = &Error{"bad_message", "That question no longer exists."}
 )
@@ -32,6 +33,7 @@ type question struct {
 	Answer   string `json:"answer,omitempty"`
 	Mine     bool   `json:"mine,omitempty"`
 	viewerID string // never sent: viewer IDs are credentials
+	ip       string
 }
 
 type (
@@ -126,14 +128,20 @@ func (r *Room) Ask(c *Client, name, text string) error {
 	}
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	open := 0
+	open, openIP := 0, 0
 	for _, q := range r.questions {
-		if q.viewerID == c.viewerID && q.Answer == "" {
+		if q.Answer == "" && q.viewerID == c.viewerID {
 			open++
+		}
+		if q.Answer == "" && q.ip == c.IP {
+			openIP++
 		}
 	}
 	if open >= limits.MaxOpenQuestions {
 		return ErrTooManyAsked
+	}
+	if openIP >= limits.MaxOpenQuestionsPerIP {
+		return ErrNetworkAsked
 	}
 	if len(r.questions) >= limits.MaxQuestions {
 		return ErrQuestionsFull
@@ -141,7 +149,7 @@ func (r *Room) Ask(c *Client, name, text string) error {
 	r.setName(c.viewerID, cleanName(name))
 	r.nextQ++
 	r.questions = append(r.questions, question{
-		ID: strconv.Itoa(r.nextQ), Name: cleanName(name), Text: text, viewerID: c.viewerID,
+		ID: strconv.Itoa(r.nextQ), Name: cleanName(name), Text: text, viewerID: c.viewerID, ip: c.IP,
 	})
 	r.sendQuestions()
 	return nil

@@ -8,17 +8,21 @@ const (
 	MaxMessageBytes = 256 << 10 // websocket read limit
 	MaxViewers      = 200       // viewer connections per room
 	MaxPending      = 20        // pending write requests per room
-	MaxRooms        = 1000
+	MaxRooms        = 300       // ponytail: a maxed-out room holds ~0.7 MB; sized for Render free (512 MB). Raise with a bigger plan.
 	MaxNameRunes    = 24
 
 	MaxQuestionRunes = 280 // question or answer length
 	MaxQuestions     = 50  // questions kept per room
 	MaxOpenQuestions = 3   // unanswered questions per viewer
-	ReactEvery       = 300 * time.Millisecond
+	// Per network (IP), so one person reconnecting as many viewers cannot
+	// fill a room's lists. A class on one school network shares these.
+	MaxOpenQuestionsPerIP = 15
+	MaxPendingPerIP       = 8
+	ReactEvery            = 300 * time.Millisecond
 
 	// ponytail: per-room playback cap; 1000 rooms could hold 1 GB. Lower
 	// MaxRooms or move history to disk if memory gets tight.
-	MaxHistoryBytes = 1 << 20
+	MaxHistoryBytes = 512 << 10
 	HistoryEvery    = 3 * time.Second
 
 	MessagesPerSecond = 30

@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"runtime/debug"
 	"syscall"
 	"time"
 
@@ -20,19 +21,23 @@ import (
 
 func main() {
 	port := env("PORT", "8080")
+	if os.Getenv("GOMEMLIMIT") == "" {
+		debug.SetMemoryLimit(400 << 20) // collect garbage harder before Render free's 512 MB
+	}
 	mgr := room.NewManager(room.Config{
 		IdleTTL:     envDuration("ROOM_IDLE_TTL", 6*time.Hour),
 		MaxAge:      envDuration("ROOM_MAX_AGE", 24*time.Hour),
 		WriterGrace: envDuration("WRITER_GRACE", 10*time.Second),
 	})
 	wsh := &ws.Handler{Rooms: mgr}
+	g := newGuard()
 	if o := os.Getenv("ALLOWED_ORIGIN"); o != "" {
 		wsh.OriginPatterns = []string{o}
 	}
 
 	srv := &http.Server{
 		Addr:              ":" + port,
-		Handler:           securityHeaders(routes(mgr, wsh)),
+		Handler:           securityHeaders(routes(mgr, wsh, g)),
 		ReadHeaderTimeout: 10 * time.Second,
 	}
 
@@ -55,6 +60,16 @@ func main() {
 		log.Print("DATABASE_URL not set: sessions are lost on restart")
 	}
 	go mgr.RunJanitor(ctx, time.Minute)
+	go func() {
+		for t := time.NewTicker(time.Minute); ; {
+			select {
+			case <-ctx.Done():
+				return
+			case now := <-t.C:
+				g.prune(now)
+			}
+		}
+	}()
 	go func() {
 		log.Printf("listening on :%s", port)
 		if err := srv.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
@@ -80,7 +95,7 @@ func main() {
 	}
 }
 
-func routes(mgr *room.Manager, wsh *ws.Handler) *http.ServeMux {
+func routes(mgr *room.Manager, wsh *ws.Handler, g *guard) *http.ServeMux {
 	mux := http.NewServeMux()
 	static := http.FileServerFS(web.FS)
 	mux.Handle("GET /css/", static)
@@ -89,7 +104,7 @@ func routes(mgr *room.Manager, wsh *ws.Handler) *http.ServeMux {
 	mux.HandleFunc("GET /{$}", page("index.html"))
 	mux.HandleFunc("GET /h/{roomId}", page("host.html"))
 	mux.HandleFunc("GET /v/{roomId}", page("view.html"))
-	mux.Handle("GET /ws/{roomId}", wsh)
+	mux.Handle("GET /ws/{roomId}", g.limitConns(wsh))
 	mux.HandleFunc("GET /robots.txt", func(w http.ResponseWriter, _ *http.Request) {
 		io.WriteString(w, "User-agent: *\nDisallow: /h/\nDisallow: /v/\nDisallow: /api/\nSitemap: https://devshire.in/sitemap.xml\n")
 	})
@@ -98,7 +113,11 @@ func routes(mgr *room.Manager, wsh *ws.Handler) *http.ServeMux {
 		io.WriteString(w, `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>https://devshire.in/</loc></url></urlset>`)
 	})
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusOK) })
-	mux.HandleFunc("POST /api/rooms", func(w http.ResponseWriter, _ *http.Request) {
+	mux.HandleFunc("POST /api/rooms", func(w http.ResponseWriter, r *http.Request) {
+		if !g.allowRoom(ws.ClientIP(r), time.Now()) {
+			http.Error(w, "You started a lot of sessions. Try again in a few minutes.", http.StatusTooManyRequests)
+			return
+		}
 		id, key, err := mgr.Create()
 		if err != nil {
 			http.Error(w, "Too many active sessions. Try again later.", http.StatusServiceUnavailable)
@@ -131,6 +150,8 @@ func securityHeaders(next http.Handler) http.Handler {
 		h.Set("Content-Security-Policy", "default-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'")
 		h.Set("X-Content-Type-Options", "nosniff")
 		h.Set("Referrer-Policy", "no-referrer")
+		h.Set("Strict-Transport-Security", "max-age=31536000")
+		h.Set("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
 		next.ServeHTTP(w, r)
 	})
 }
