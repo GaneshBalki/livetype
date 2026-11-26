@@ -39,7 +39,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	rm := h.Rooms.Get(r.PathValue("roomId"))
 	if rm == nil {
-		conn.Close(room.CloseTerminal, room.ErrClosed.Message)
+		closeWith(ctx, conn, room.CloseTerminal, room.ErrClosed.Message)
 		return
 	}
 	c, err := hello(ctx, conn, rm, ClientIP(r))
@@ -53,7 +53,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			conn.Write(wctx, websocket.MessageText, e.Frame())
 			cancel()
 		}
-		conn.Close(room.CloseTerminal, e.Message)
+		closeWith(ctx, conn, room.CloseTerminal, e.Message)
 		return
 	}
 
@@ -146,10 +146,23 @@ func writePump(ctx context.Context, conn *websocket.Conn, c *room.Client) {
 			}
 		case <-c.Done():
 			code, reason := c.CloseStatus()
-			conn.Close(websocket.StatusCode(code), reason)
+			closeWith(ctx, conn, code, reason)
 			return
 		}
 	}
+}
+
+// closeWith ends the connection. For session-over codes (4000-4999) it first
+// sends {"type":"closed"} as a normal message, because the Render/Cloudflare
+// proxy does not pass close frames on to the browser.
+func closeWith(ctx context.Context, conn *websocket.Conn, code int, reason string) {
+	if code >= 4000 && code < 5000 {
+		b, _ := json.Marshal(map[string]any{"type": "closed", "code": code, "reason": reason})
+		wctx, cancel := context.WithTimeout(ctx, limits.WriteTimeout)
+		conn.Write(wctx, websocket.MessageText, b)
+		cancel()
+	}
+	conn.Close(websocket.StatusCode(code), reason)
 }
 
 // ClientIP is the visitor's address. Render serves through Cloudflare, which
