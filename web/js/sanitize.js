@@ -1,5 +1,8 @@
+import { parseCode, codeView } from './code.js';
+
 // The document is HTML written by whoever holds the pen, and viewers may hold
 // it, so every page rebuilds incoming HTML from an allowlist before showing it.
+// A code document (one <pre data-lang>) is shown as highlighted code instead.
 // Only formatting survives: no attributes besides filtered styles and <font>'s
 // face/color/size, so no scripts, handlers, links or URLs.
 
@@ -46,5 +49,6 @@ function copyChildren(from, to) {
 
 // render replaces el's content with the sanitized document.
 export function render(el, html) {
-  el.replaceChildren(sanitize(html));
+  const code = parseCode(html);
+  el.replaceChildren(code ? codeView(code.lang, code.code) : sanitize(html));
 }

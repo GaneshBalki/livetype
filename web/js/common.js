@@ -2,6 +2,7 @@
 // and the editor sync used by whoever holds the pen.
 
 import { render } from './sanitize.js';
+import { LANGS, parseCode, codeHtml, codeView, codeInput, paint } from './code.js';
 export { render };
 
 export const $ = (id) => document.getElementById(id);
@@ -56,11 +57,30 @@ export function makeEditor(el, conn, onTooLarge) {
   let writable = false;
   let known = ''; // the text the server has, as far as we know
   let timer = null;
+  let lang = ''; // set while the document is code
+  const input = codeInput();
+
+  const read = () => (lang ? codeHtml(lang, input.value) : el.innerHTML);
+
+  // show displays html; while writable, code gets the editable textarea.
+  function show(html) {
+    const code = parseCode(html);
+    lang = code ? code.lang : '';
+    el.contentEditable = writable && !lang;
+    el.classList.toggle('has-code', !!lang);
+    if (lang && writable) {
+      input.value = code.code;
+      el.replaceChildren(codeView(lang, code.code, input));
+    } else {
+      render(el, html);
+    }
+    api.onMode?.(lang);
+  }
 
   function flush() {
     clearTimeout(timer);
     timer = null;
-    const text = el.innerHTML;
+    const text = read();
     if (!writable || text === known) return;
     const msg = JSON.stringify({ type: 'update', text });
     if (new Blob([msg]).size > MAX_MESSAGE_BYTES) {
@@ -69,36 +89,39 @@ export function makeEditor(el, conn, onTooLarge) {
     }
     if (conn.send(msg)) known = text;
   }
+  const schedule = () => {
+    if (writable && !timer) timer = setTimeout(flush, SEND_EVERY_MS);
+  };
 
   // Pasted content arrives as plain text so foreign markup never enters the doc.
   el.addEventListener('paste', (e) => {
+    if (e.target === input) return; // a textarea pastes plain text already
     e.preventDefault();
     document.execCommand('insertText', false, e.clipboardData.getData('text/plain'));
   });
 
-  el.addEventListener('input', () => {
-    if (writable && !timer) timer = setTimeout(flush, SEND_EVERY_MS);
-  });
+  el.addEventListener('input', schedule);
+  input.addEventListener('input', () => paint(el.querySelector('.code'), lang, input.value)); // bubbles to el, which sends it
 
-  return {
+  const api = {
     flush,
     get writable() { return writable; },
-    get text() { return writable ? el.innerHTML : known; },
+    get text() { return writable ? read() : known; },
+    get lang() { return lang; },
 
     // After a reconnect, keep local edits if we held the pen before and still
     // do: nobody else can have written in between, so ours are the newest.
     welcome(text, canWrite) {
       const keep = writable && canWrite;
       writable = canWrite;
-      el.contentEditable = canWrite;
       known = text;
       if (keep) flush();
-      else render(el, text);
+      else show(text);
     },
 
     snapshot(text) {
       known = text;
-      if (!writable) render(el, text);
+      if (!writable) show(text);
     },
 
     // A change of writer replaces the editor with the server's text.
@@ -107,10 +130,25 @@ export function makeEditor(el, conn, onTooLarge) {
       clearTimeout(timer);
       timer = null;
       writable = canWrite;
-      el.contentEditable = canWrite;
-      render(el, known);
+      show(known);
+    },
+
+    // setMode switches the writer's document between rich text ('') and a
+    // code language. The text is kept; formatting is dropped going to code.
+    setMode(next) {
+      if (!writable || next === lang) return;
+      const plain = lang ? input.value : el.innerText.replace(/\n$/, '');
+      if (next) {
+        show(codeHtml(next, plain));
+      } else {
+        show('');
+        el.textContent = plain;
+      }
+      flush();
+      (lang ? input : el).focus();
     },
   };
+  return api;
 }
 
 let toastTimer;
@@ -162,7 +200,7 @@ const TOGGLES = [
 ];
 
 // makeToolbar returns a Word-style font toolbar that formats the selection in el.
-export function makeToolbar(el) {
+export function makeToolbar(el, editor) {
   const bar = document.createElement('div');
   bar.className = 'toolbar';
   bar.setAttribute('role', 'toolbar');
@@ -218,11 +256,16 @@ export function makeToolbar(el) {
     g.append(...kids);
     return g;
   };
-  bar.append(
-    group(font, size, grow, shrink, cases, clear),
-    group(...toggles),
-    group(...highlight, ...fg),
-  );
+  const mode = select('Text or code', [['', 'Text'], ...Object.entries(LANGS).map(([id, l]) => [id, l.name])], (v) => editor.setMode(v));
+  mode.classList.add('mode');
+  const formats = [group(font, size, grow, shrink, cases, clear), group(...toggles), group(...highlight, ...fg)];
+  bar.append(group(mode), ...formats);
+  // Code has no fonts or colours: hide those tools while the document is code.
+  editor.onMode = (lang) => {
+    mode.value = lang;
+    for (const g of formats) g.hidden = !!lang;
+  };
+  editor.onMode(editor.lang);
 
   function sync() {
     if (el.contentEditable !== 'true') return;
@@ -289,9 +332,14 @@ export function makeToolbar(el) {
 // Word opens an HTML file served as application/msword, keeping the formatting.
 // ponytail: .doc, not .docx; a real .docx needs a zip library.
 // PDF goes through the browser's print dialog ("Save as PDF"); print CSS hides everything but the text.
-export function bindDownloads(getHtml) {
+// A code document is exported as one <pre> rebuilt from its text, not the on-screen view.
+export function bindDownloads(getHtml, editor) {
+  const docHtml = () => {
+    const c = parseCode(editor.text);
+    return c ? codeHtml(c.lang, c.code) : getHtml();
+  };
   $('dl-doc').addEventListener('click', () => {
-    const html = `<html><head><meta charset="utf-8"></head><body style="white-space:pre-wrap">${getHtml()}</body></html>`;
+    const html = `<html><head><meta charset="utf-8"></head><body style="white-space:pre-wrap">${docHtml()}</body></html>`;
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob(['﻿', html], { type: 'application/msword' }));
     a.download = 'livetype.doc';
