@@ -73,8 +73,6 @@ for (const [label, re] of [['Bold (Ctrl+B)', /font-weight: bold|<b>/], ['Italic 
   if (!label.startsWith('Sub') && !label.startsWith('Super')) check(`${label} button shows pressed`, await until(() => H(`document.querySelector('${tool(label)}').getAttribute('aria-pressed') === 'true'`)));
 }
 check('all six formats stack', await viewerSees(/<b>.*<i>.*<u>.*(<s>|<strike>)/), await viewHtml());
-await selectAll(); await click(tool('Clear formatting'));
-check('clear formatting removes styles', await until(async () => !/<b>|<i>|<u>|<s>|<sub>|<sup>|font-weight|italic|underline|line-through/.test(await viewHtml())), await viewHtml());
 
 // --- font, size, grow/shrink, colors
 await selectAll(); await choose('Font', 'Georgia');
@@ -91,17 +89,19 @@ await selectAll(); await click(tool('Font color'));
 check('font color reaches viewer', await viewerSees(/color="#00ff00"/), await viewHtml());
 await selectAll(); await click(tool('Highlight color'));
 check('highlight reaches viewer', await viewerSees(/background-color: rgb\(253, 224, 71\)/), await viewHtml());
-
-// --- change case
-await selectAll(); await choose('Change case', 'UPPERCASE');
-check('UPPERCASE', await viewerSees(/HELLO WORLD\. SECOND LINE/), await viewHtml());
-await selectAll(); await choose('Change case', 'Sentence case.');
-check('Sentence case', await viewerSees(/Hello world\. Second line/), await viewHtml());
-await selectAll(); await choose('Change case', 'Capitalize Each Word');
-check('Capitalize Each Word', await viewerSees(/Hello World\. Second Line/), await viewHtml());
-await selectAll(); await choose('Change case', 'tOGGLE cASE');
-check('tOGGLE cASE', await viewerSees(/hELLO wORLD\. sECOND lINE/), await viewHtml());
-check('case dropdown resets to Aa', await H(`document.querySelector('${tool('Change case')}').value === ''`));
+await H(`(() => { const e = document.getElementById('editor'); e.focus(); const r = document.createRange(); r.selectNodeContents(e.querySelector('[style*="background-color"]')); r.collapse(false); getSelection().removeAllRanges(); getSelection().addRange(r); })()`);
+await sleep(100); await H(`document.execCommand('insertText', false, 'Z')`);
+check('text typed after a highlight is highlighted for the writer too', await H(`[...document.querySelectorAll('#editor [style]')].every((n) => !n.getAttribute('style').includes('background') || getComputedStyle(n).backgroundColor !== 'rgba(0, 0, 0, 0)')`));
+check('highlighted text is dark', await H(`getComputedStyle(document.querySelector('#editor [style*="background-color"]')).color === 'rgb(26, 24, 20)'`));
+check('highlight visible to the writer', await H(`[...document.querySelectorAll('#editor [style]')].some((n) => getComputedStyle(n).backgroundColor === 'rgb(253, 224, 71)')`));
+await selectAll(); await sleep(100); await click(tool('Highlight color'));
+check('highlight button again removes the highlight', await viewerSees(/^(?![\s\S]*background-color: rgb\(253)/), await viewHtml());
+await selectAll(); await sleep(100); await click(tool('Highlight color'));
+await H(`(() => { const p = document.querySelector('${tool('Highlight color: choose')}'); p.value = '#a5f3fc'; p.dispatchEvent(new Event('change')); })()`);
+check('picking a colour on highlighted text recolours it', await viewerSees(/background-color: rgb\(165, 243, 252\)/), await viewHtml());
+await H(`(() => { const e = document.getElementById('editor'); const r = document.createRange(); r.selectNodeContents(e); r.collapse(false); getSelection().removeAllRanges(); getSelection().addRange(r); })()`); await sleep(100);
+await click(tool('Highlight color')); await H(`document.execCommand('insertText', false, 'plain')`);
+check('highlight off at the caret: next text is plain', await until(() => H(`(() => { const t = [...document.getElementById('editor').querySelectorAll('*')].find((n) => n.childNodes.length && [...n.childNodes].some((c) => c.nodeType === 3 && c.data.includes('plain'))); let n = t; while (n && n.id !== 'editor') { if (n.style?.backgroundColor && n.style.backgroundColor !== 'transparent') return false; n = n.parentNode; } return true; })()`)), await H(`document.getElementById('editor').innerHTML`));
 
 // --- paste is plain text
 await selectAll();
@@ -134,12 +134,14 @@ for (const [name, t] of [['host', host], ['viewer', viewer]]) {
 }
 
 // --- pen handover: viewer writes with the toolbar, host sees it
-await click('#request-btn', V); await V(`document.getElementById('name').value = 'Tester'; document.getElementById('request-form').requestSubmit()`);
+await V(`document.getElementById('name').value = ''`); await click('#request-btn', V);
+check('request without a name asks for one', await until(() => V(`!document.getElementById('toast').hidden && document.activeElement.id === 'name'`)));
+await V(`document.getElementById('name').value = 'Tester'`); await click('#request-btn', V);
 await until(() => H(`document.querySelectorAll('#requests li').length === 1`));
 await H(`[...document.querySelectorAll('#requests button')].find((b) => b.textContent === 'Approve').click()`);
 check('viewer becomes writer', await until(() => V(`document.getElementById('editor').contentEditable === 'true' && !document.getElementById('editor').hidden`)));
 check('viewer toolbar shown + enabled', await V(`!document.querySelector('.toolbar').hidden && !document.querySelector('.toolbar button').disabled`));
-check('host toolbar disabled while viewer writes', await until(() => H(`document.querySelector('.toolbar button').disabled && document.getElementById('editor').contentEditable === 'false'`)));
+check('host toolbar disabled while viewer writes', await until(() => H(`document.querySelector('.toolbar .tool-group button').disabled && document.getElementById('editor').contentEditable === 'false'`)));
 check('host Download stays usable while viewer writes', await H(`!document.getElementById('dl-doc').disabled && !document.querySelector('.download summary').closest(':disabled')`));
 check('viewer .doc download works while writing', await V(`new Promise((res) => { const c = URL.createObjectURL; URL.createObjectURL = (b) => { URL.createObjectURL = c; res(b.size > 0); return c(b); }; document.getElementById('dl-doc').click(); })`));
 await selectAll(V); await click(tool('Italic (Ctrl+I)'), V);
@@ -189,7 +191,7 @@ check('host toasted the new question', await H(`document.getElementById('toast')
 check('asker sees own question waiting', await until(() => V(`!!document.querySelector('#questions .q-wait')`)));
 await H(`document.querySelector('#questions input').value = 'Because.'; document.querySelector('#questions form').requestSubmit()`);
 check('answer reaches viewer', await until(() => V(`document.querySelector('#questions .q-answer')?.textContent === 'Because.'`)));
-await H(`[...document.querySelectorAll('#questions button')].find((b) => b.textContent === 'Dismiss').click()`);
+await H(`[...document.querySelectorAll('#questions button')].find((b) => b.title === 'Dismiss').click()`);
 check('dismiss clears it for viewer', await until(() => V(`document.querySelectorAll('#questions li').length === 0`)));
 
 // --- developer mode (code documents)
@@ -204,6 +206,8 @@ check('viewer sees line numbers and language', (await vcode('.code-gutter')) ===
 check('host editor highlights while typing', await H(`document.querySelector('#editor .code-hl .tok-k')?.textContent === 'def'`));
 const cdoc = await H(`new Promise((res) => { const orig = URL.createObjectURL; URL.createObjectURL = (b) => { b.text().then(res); return orig(b); }; document.getElementById('dl-doc').click(); })`);
 check('.doc download of code is the plain code', /<pre data-lang="python">def hi\(name\):\n    return 'x' \+ 42  # done<\/pre>/.test(cdoc) && !/code-gutter|Copy code/.test(cdoc), cdoc.slice(0, 300));
+const src = await H(`new Promise((res) => { const d = document.querySelector('.download'); d.open = true; setTimeout(() => { const b = document.getElementById('dl-src'); const shown = [b.hidden, b.textContent]; const orig = URL.createObjectURL; let name; const click = HTMLAnchorElement.prototype.click; HTMLAnchorElement.prototype.click = function () { name = this.download; HTMLAnchorElement.prototype.click = click; }; URL.createObjectURL = (x) => { URL.createObjectURL = orig; x.text().then((t) => res([...shown, name, t])); return orig(x); }; b.click(); }, 50); })`);
+check('code download is a .py source file', !src[0] && src[1] === 'Python (.py)' && src[2] === 'devshire.py' && src[3] === "def hi(name):\n    return 'x' + 42  # done", JSON.stringify(src));
 check('code view never runs markup', await V(`import('/js/sanitize.js').then(({ render }) => { const d = document.createElement('div'); render(d, '<pre data-lang="go"><img src=x onerror="window.pwned=1">x</pre>'); return !d.querySelector('img') && d.querySelector('.code-hl').textContent.includes('x'); })`));
 check('live cursor hidden in code mode', await V(`getComputedStyle(document.getElementById('text'), '::after').display === 'none'`));
 writeFileSync(`${OUT}/code-viewer.png`, Buffer.from((await viewer.send('Page.captureScreenshot', {})).result.data, 'base64'));

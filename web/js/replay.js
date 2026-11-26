@@ -146,9 +146,10 @@ function makeDialog() {
       pos = 0;
       shown = -1;
       seek.max = tl.total;
-      seek.disabled = play.disabled = q('.replay-restart').disabled = tl.count === 0;
+      seek.disabled = play.disabled = q('.replay-restart').disabled = q('.replay-speed').disabled = tl.count === 0;
       draw();
       if (tl.count === 0) text.textContent = 'Nothing to replay yet. Start typing first.';
+      q('.replay-writer').hidden = tl.count === 0;
       setPlaying(tl.count > 0);
     },
   };

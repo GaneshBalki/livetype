@@ -1,6 +1,7 @@
 package room
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -105,5 +106,26 @@ func TestQuestionLimits(t *testing.T) {
 	r.Ask(joinViewer(t, r, ""), "B", strings.Repeat("é", 500))
 	if n := len([]rune(r.questions[3].Text)); n != 280 {
 		t.Fatalf("question not capped: %d runes", n)
+	}
+}
+
+func TestWatchers(t *testing.T) {
+	r, h := newTestRoom(t)
+	a := joinViewer(t, r, "")
+	joinViewer(t, r, "")
+	r.SetName(a, " Asha‮ ")
+	r.Hand(a, true)
+	m := last(t, h, "watchers")
+	list := m["list"].([]any)
+	first, second := list[0].(map[string]any), list[1].(map[string]any)
+	if len(list) != 2 || first["name"] != "Asha" || first["hand"] != true || second["name"] != "Guest 2" {
+		t.Fatalf("watchers = %v", m)
+	}
+	if strings.Contains(fmt.Sprint(m), a.viewerID) {
+		t.Fatal("viewer ID leaked to host list")
+	}
+	r.Leave(a)
+	if n := len(last(t, h, "watchers")["list"].([]any)); n != 1 {
+		t.Fatalf("after leave: %d watchers", n)
 	}
 }

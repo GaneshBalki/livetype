@@ -87,6 +87,8 @@ func (c *Client) SendError(e *Error) { c.send(e.Frame()) }
 type viewer struct {
 	conns map[*Client]struct{}
 	timer *time.Timer // forgets the viewer once the grace period passes with no connections
+	name  string      // set once they type a name; "Guest N" until then
+	n     int         // join order, for the guest number and list order
 }
 
 type request struct {
@@ -109,6 +111,7 @@ type Room struct {
 	host       *Client
 	hostLeft   time.Time
 	viewers    map[string]*viewer
+	nextViewer int
 	conns      int // viewer connections across all viewers
 	pending    []request
 	hands      map[string]bool // viewer IDs with a raised hand
@@ -240,6 +243,7 @@ func (r *Room) sendRequests() {
 
 func (r *Room) broadcastPresence() {
 	r.broadcast(encode(presenceMsg{"presence", r.conns, r.host != nil}), nil)
+	r.sendWatchers()
 }
 
 // JoinHost attaches c as the host. A previous host connection is closed, so
@@ -280,7 +284,8 @@ func (r *Room) JoinViewer(c *Client, id string) error {
 	v := r.viewers[id]
 	if v == nil {
 		id = ids.Key()
-		v = &viewer{conns: map[*Client]struct{}{}}
+		r.nextViewer++
+		v = &viewer{conns: map[*Client]struct{}{}, n: r.nextViewer}
 		r.viewers[id] = v
 	}
 	if v.timer != nil {

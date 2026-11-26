@@ -57,6 +57,7 @@ func (r *Room) setWriter(id, name, reason string) {
 		r.sendViewer(id, roleChange("writer", ""))
 	}
 	r.broadcast(r.snapshot(), nil)
+	r.sendWatchers()
 }
 
 func (r *Room) RequestWrite(c *Client, name string) error {
@@ -69,6 +70,7 @@ func (r *Room) RequestWrite(c *Client, name string) error {
 		return nil
 	}
 	req := request{c.viewerID, cleanName(name)}
+	r.setName(c.viewerID, req.Name)
 	if i := r.pendingIndex(c.viewerID); i >= 0 {
 		r.pending[i] = req // a repeated request replaces the old one
 	} else if len(r.pending) >= limits.MaxPending {

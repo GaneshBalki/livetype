@@ -8,6 +8,10 @@ let ended = false;
 $('viewer-link').value = viewerUrl;
 $('copy-viewer').addEventListener('click', () => copy(viewerUrl));
 $('copy-host').addEventListener('click', () => copy(location.href));
+// Close open popups (host-link info, download menu) on a click elsewhere.
+document.addEventListener('click', (e) => {
+  for (const d of document.querySelectorAll('details[open]')) if (!d.contains(e.target)) d.open = false;
+});
 addEventListener('beforeunload', (e) => {
   if (!ended) e.preventDefault();
 });
@@ -28,7 +32,10 @@ function start() {
   const editor = makeEditor($('editor'), conn, () => toast('Text is over 200 KB. Changes are not being sent.'));
   const toolbar = makeToolbar($('editor'), editor);
   $('editor').before(toolbar.el);
-  toolbar.el.append($('replay-btn'), document.querySelector('.download')); // Replay and Download sit at the toolbar's right end
+  const actions = document.createElement('span');
+  actions.className = 'tool-actions'; // not a tool-group, so they stay usable while a viewer holds the pen
+  actions.append($('replay-btn'), document.querySelector('.download'));
+  toolbar.el.append(actions); // right end of the toolbar
   $('replay-btn').addEventListener('click', () => conn.send({ type: 'history' }));
 
   bindDownloads(() => $('editor').innerHTML, editor);
@@ -58,6 +65,9 @@ function start() {
       case 'presence':
         showPresence(m);
         break;
+      case 'watchers':
+        renderWatchers(m.list);
+        break;
       case 'history':
         showReplay(m);
         break;
@@ -83,6 +93,29 @@ function start() {
     }
   }
 
+  function renderWatchers(list) {
+    $('watchers').replaceChildren(...list.map((w) => {
+      const li = document.createElement('li');
+      li.dataset.initial = w.name.trim()[0]?.toUpperCase() || '?';
+      const name = document.createElement('span');
+      name.textContent = w.name;
+      li.append(name);
+      if (w.writer) li.append(badge('Writing', 'tag tag-pen'));
+      if (w.hand) li.append(badge('✋', 'tag', 'Hand raised'));
+      return li;
+    }));
+    $('no-watchers').hidden = list.length > 0;
+    $('watch-count').textContent = list.length || '';
+  }
+
+  function badge(text, cls, label) {
+    const b = document.createElement('span');
+    b.className = cls;
+    b.textContent = text;
+    if (label) { b.title = label; b.setAttribute('aria-label', label); }
+    return b;
+  }
+
   function questionActions(q) {
     const box = document.createElement('form');
     box.className = 'q-actions';
@@ -99,7 +132,9 @@ function start() {
         conn.send({ type: 'answer', id: q.id, text: input.value });
       });
     }
-    box.append(button('Dismiss', 'sm', () => conn.send({ type: 'dismiss', id: q.id })));
+    const x = button('×', 'sm dismiss', () => conn.send({ type: 'dismiss', id: q.id }));
+    x.title = 'Dismiss'; x.setAttribute('aria-label', `Dismiss question from ${q.name}`);
+    box.append(x);
     return box;
   }
 
