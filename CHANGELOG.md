@@ -4,6 +4,28 @@ All notable changes to LiveType are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [3.1.0] - 2026-11-26
+
+### Added
+- **Sessions survive restarts and redeploys.** With `DATABASE_URL` set to a
+  Postgres database (for example Neon's free plan), each session is saved every
+  2 seconds and when the server shuts down. After a restart, the host and viewer
+  pages reconnect on their own and find their text, questions and answers, and
+  Replay recording intact. A crash loses at most the last 2 seconds of typing.
+- Without `DATABASE_URL`, nothing changes: sessions stay in memory only.
+
+### Changed
+- After a restart the pen returns to the host. Raised hands and pending write
+  requests are cleared, and viewers rejoin with new IDs, so an unanswered
+  question is still shown to the host but no longer to the viewer who asked it.
+- Host keys are now kept only as a SHA-256 hash, in memory and in the database.
+- Saved sessions are deleted when they expire (24 hours after creation, or 6
+  hours after the host leaves).
+
+### Notes
+- New dependency: `github.com/jackc/pgx/v5` (Postgres driver).
+- Saved data is gzipped JSON, at most about 1.2 MB per session before compression.
+
 ## [3.0.1] - 2026-11-26
 
 ### Fixed
@@ -132,6 +154,7 @@ All notable changes to LiveType are recorded here. The format follows
 - Live typing session with a shareable viewer link, write requests, and host
   approve, deny and take-back controls. Single Go binary with embedded web assets.
 
+[3.1.0]: https://github.com/GaneshBalki/livetype/compare/v3.0.1...v3.1.0
 [3.0.1]: https://github.com/GaneshBalki/livetype/compare/v3.0.0...v3.0.1
 [3.0.0]: https://github.com/GaneshBalki/livetype/compare/v2.3.1...v3.0.0
 [2.3.1]: https://github.com/GaneshBalki/livetype/compare/v2.3.0...v2.3.1
