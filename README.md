@@ -1,4 +1,6 @@
-# LiveType
+# DevShire
+
+Live writing sessions at [devshire.in](https://devshire.in). Formerly LiveType.
 
 A real-time communication tool built around writing: you explain by typing,
 your audience watches every keystroke, reacts and asks questions. It is not a

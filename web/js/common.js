@@ -342,7 +342,7 @@ export function bindDownloads(getHtml, editor) {
     const html = `<html><head><meta charset="utf-8"></head><body style="white-space:pre-wrap">${docHtml()}</body></html>`;
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob(['﻿', html], { type: 'application/msword' }));
-    a.download = 'livetype.doc';
+    a.download = 'devshire.doc';
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
     $('dl-doc').closest('details').open = false;
