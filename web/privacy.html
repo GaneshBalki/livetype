@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="What DevShire stores, who can see it, and when it is deleted.">
+<meta name="theme-color" content="#f7f6f2" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#090c0a" media="(prefers-color-scheme: dark)">
+<title>Privacy – DevShire</title>
+<link rel="canonical" href="https://devshire.in/privacy">
+<link rel="icon" href="/img/favicon.svg?v=4" type="image/svg+xml">
+<link rel="stylesheet" href="/css/style.css">
+<script src="/js/theme.js"></script>
+</head>
+<body class="home">
+<header class="bar top">
+  <a class="brand" href="/"><svg class="logo" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#1a1814"/><path d="M8.5 9h4a7 7 0 0 1 0 14h-4z" fill="none" stroke="#f7f6f2" stroke-width="2.6" stroke-linejoin="round"/><path class="caret" d="M24.5 10v12" stroke="#fb8a4c" stroke-width="2.6" stroke-linecap="round"/></svg>DevShire</a>
+  <span class="end"><button type="button" id="theme-toggle" class="ghost sm theme-toggle" aria-label="Dark mode" title="Toggle dark mode"><svg class="icon moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg><svg class="icon sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></button></span>
+</header>
+<main class="prose">
+  <h1>Privacy</h1>
+  <p class="lead">DevShire has no accounts, no ads and no tracking. Sessions are deleted after 24 hours at most.</p>
+
+  <h2>What is stored</h2>
+  <ul>
+    <li>The session's text or code, its Replay recording, and questions and answers.</li>
+    <li>Names viewers type in. A name is optional.</li>
+    <li>Your network address, for a short time, to stop spam and abuse. It is kept in memory only, never with the session.</li>
+  </ul>
+  <p>Sessions are saved to a database so they survive server restarts.</p>
+
+  <h2>Who can see a session</h2>
+  <ul>
+    <li><strong>Anyone with the viewer link</strong> can watch the session and replay it from the start. Share it only with people you want watching.</li>
+    <li><strong>Only the holder of the host link</strong> can write, hand over the pen or end the session. Keep it to yourself.</li>
+    <li>A question is seen only by the host and the person who asked it, until the host answers it.</li>
+  </ul>
+
+  <h2>When it is deleted</h2>
+  <ul>
+    <li>Right away, when the host clicks <strong>End session</strong>.</li>
+    <li>6 hours after the host leaves.</li>
+    <li>24 hours after the session started, whatever happens.</li>
+  </ul>
+  <p>Deleted sessions cannot be recovered.</p>
+
+  <h2>In your browser</h2>
+  <p>DevShire uses no cookies. Your browser remembers your theme, your viewer name and your place in a session, and you can clear these at any time.</p>
+
+  <h2>Security</h2>
+  <p>All traffic is encrypted (HTTPS). Links are random and cannot be guessed in practice. Everything viewers send is cleaned before it is shown.</p>
+
+  <h2>Hosting</h2>
+  <p>DevShire runs on Render, behind Cloudflare, with a Neon database. Like any website host, they process connection data to deliver pages.</p>
+
+  <h2>Questions</h2>
+  <p>Open an issue on <a href="https://github.com/GaneshBalki/livetype">GitHub</a>.</p>
+  <p class="muted small">Last updated 26 November 2026.</p>
+</main>
+<footer class="foot"><a href="/">DevShire</a> · <a href="/privacy">Privacy</a> · <a href="https://github.com/GaneshBalki/livetype">GitHub</a></footer>
+</body>
+</html>

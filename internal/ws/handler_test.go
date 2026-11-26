@@ -303,3 +303,20 @@ func TestRoomExpiryDisconnectsClients(t *testing.T) {
 	s.mgr.Sweep(time.Now().Add(2 * time.Hour))
 	v.expectClose(room.CloseTerminal)
 }
+
+func TestHostEndsSession(t *testing.T) {
+	s := newServer(t)
+	h := s.host(t)
+	v, _ := s.viewer(t, "")
+	v.send(map[string]any{"type": "end"})
+	v.expectError("bad_message") // viewers cannot end it
+
+	h.send(map[string]any{"type": "end"})
+	h.expectClose(4000)
+	v.expectClose(4000)
+	if s.mgr.Get(s.id) != nil {
+		t.Fatal("room still exists")
+	}
+	// The old host link no longer works.
+	s.dial(t, map[string]any{"role": "host", "hostKey": s.key}).expectClose(4000)
+}

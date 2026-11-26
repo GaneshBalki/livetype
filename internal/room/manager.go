@@ -185,3 +185,31 @@ func (m *Manager) CloseAll() {
 		r.Close(CloseGoingAway, "Server restarting.")
 	}
 }
+
+// End lets the host close their session now: everyone is disconnected, the
+// host link stops working and the saved copy is deleted.
+func (m *Manager) End(r *Room, c *Client) error {
+	if !c.host {
+		return ErrNotHost
+	}
+	m.mu.Lock()
+	if m.rooms[r.ID] == r {
+		delete(m.rooms, r.ID)
+	}
+	m.mu.Unlock()
+	r.Close(CloseTerminal, "The host ended this session.")
+	if m.store == nil {
+		return nil
+	}
+	del := func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+		if err := m.store.Delete(ctx, r.ID); err != nil {
+			log.Printf("store: delete %s: %v", r.ID, err)
+		}
+	}
+	del()
+	// A save that started just before Close could land after the delete.
+	time.AfterFunc(5*time.Second, del)
+	return nil
+}

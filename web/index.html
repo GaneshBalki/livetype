@@ -14,7 +14,13 @@
 <meta property="og:description" content="Share a link and your audience watches you write code or text live. Free, no sign-up.">
 <meta property="og:url" content="https://devshire.in/">
 <meta property="og:type" content="website">
-<link rel="icon" href="/img/favicon.svg" type="image/svg+xml">
+<meta property="og:image" content="https://devshire.in/img/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="DevShire: Write live. Your audience watches every keystroke.">
+<meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"DevShire","url":"https://devshire.in/","description":"Share code or text live with one link. Your audience watches every keystroke, reacts, asks questions and can take the pen.","applicationCategory":"DeveloperApplication","operatingSystem":"Any (web browser)","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+<link rel="icon" href="/img/favicon.svg?v=4" type="image/svg+xml">
 <link rel="stylesheet" href="/css/style.css">
 <script src="/js/theme.js"></script>
 <script type="module" src="/js/index.js"></script>
@@ -33,7 +39,7 @@
       <div class="cta">
         <button type="button" id="start" class="primary big">Start a session
           <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
-        <p class="muted small">No account. Free.</p>
+        <p class="muted small">No account · Free · Private link, deleted within 24 hours</p>
         <p id="error" class="notice" hidden></p>
       </div>
     </div>
@@ -42,7 +48,7 @@
       <div class="doc-head">
         <span class="dots"><i></i><i></i><i></i></span>
         <span class="pill status" data-state="live">Live</span>
-        <span class="muted small end">12 watching</span>
+        <span class="muted small end">Example</span>
       </div>
       <pre class="demo-text"><span class="l1"><b>function</b> greet(name) {</span><span class="l2">  <b>return</b> <i>"Hello, "</i> + name;</span><span class="l3">}</span></pre>
       <span class="demo-react">👏</span>
@@ -55,8 +61,16 @@
     <li><strong>Write while they watch</strong><span>Text or code, with formatting and syntax colours, live on every screen.</span></li>
     <li><strong>Let them take part</strong><span>Reactions, raised hands, questions, and the pen when you choose. Replay it all later.</span></li>
   </ol>
+  <section class="why" aria-labelledby="why-title">
+    <h2 id="why-title">Why not just share your screen?</h2>
+    <div class="why-grid">
+      <div><strong>Sharp on every screen</strong><span>Real text, not video. Viewers can zoom, scroll back and copy the code. It works on slow internet and phones.</span></div>
+      <div><strong>Nobody touches your text</strong><span>Unlike a shared doc, only you write. Hand over the pen when you choose, and take it back with one click.</span></div>
+      <div><strong>Nothing to install</strong><span>No app, no account, no meeting. Viewers open a link and they are in.</span></div>
+    </div>
+  </section>
   <p class="uses">Made for <strong>teaching</strong>, <strong>coding interviews</strong>, <strong>pair writing</strong> and <strong>live Q&amp;A</strong>.</p>
 </main>
-<footer class="foot">DevShire · Sessions are kept for 24 hours, then deleted.</footer>
+<footer class="foot">DevShire · Sessions are deleted within 24 hours · <a href="/privacy">Privacy</a> · <a href="https://github.com/GaneshBalki/livetype">GitHub</a></footer>
 </body>
 </html>

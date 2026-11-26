@@ -102,6 +102,7 @@ func routes(mgr *room.Manager, wsh *ws.Handler, g *guard) *http.ServeMux {
 	mux.Handle("GET /js/", static)
 	mux.Handle("GET /img/", static)
 	mux.HandleFunc("GET /{$}", page("index.html"))
+	mux.HandleFunc("GET /privacy", page("privacy.html"))
 	mux.HandleFunc("GET /h/{roomId}", page("host.html"))
 	mux.HandleFunc("GET /v/{roomId}", page("view.html"))
 	mux.Handle("GET /ws/{roomId}", g.limitConns(wsh))
@@ -110,7 +111,7 @@ func routes(mgr *room.Manager, wsh *ws.Handler, g *guard) *http.ServeMux {
 	})
 	mux.HandleFunc("GET /sitemap.xml", func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/xml")
-		io.WriteString(w, `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>https://devshire.in/</loc></url></urlset>`)
+		io.WriteString(w, `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>https://devshire.in/</loc></url><url><loc>https://devshire.in/privacy</loc></url></urlset>`)
 	})
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusOK) })
 	mux.HandleFunc("POST /api/rooms", func(w http.ResponseWriter, r *http.Request) {
