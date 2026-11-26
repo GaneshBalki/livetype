@@ -123,6 +123,9 @@ export function codeInput() {
   ta.setAttribute('autocapitalize', 'off');
   ta.setAttribute('autocomplete', 'off');
   ta.setAttribute('aria-label', 'Code. Press Escape then Tab to leave.');
+  // The textarea is sized by the highlighted code; the code box scrolls, never
+  // the textarea. Firefox scrolls it a line ahead on Enter and hides the caret.
+  ta.addEventListener('scroll', () => { ta.scrollTop = 0; ta.scrollLeft = 0; });
   let escaped = false;
   ta.addEventListener('keydown', (e) => {
     if (e.key === 'Tab' && !e.shiftKey && !escaped && !e.ctrlKey && !e.metaKey) {

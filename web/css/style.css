@@ -831,7 +831,10 @@ main.doc { flex: 1; }
 .tok-f { color: var(--tok-f); }
 .tok-t { color: var(--tok-t); }
 select.tool.mode { font-weight: 600; }
-.text.has-code { padding: 16px; }
+.text.has-code { display: flex; flex-direction: column; padding: 16px; }
+/* The code box fills the editor, so there is no second, smaller box inside it. */
+.text.has-code > .code { flex: 1 0 auto; display: flex; flex-direction: column; }
+.text.has-code .code-body { flex: 1 0 auto; }
 .code { border: 1px solid var(--border); border-radius: 10px; background: var(--surface-2); color: var(--fg); overflow: hidden; white-space: normal; font: calc(var(--text-size) * .9)/1.6 var(--mono); }
 .code-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 4px 6px 4px 12px; border-bottom: 1px solid var(--border); font: 600 12px var(--sans); color: var(--muted); }
 .code-body { display: flex; overflow-x: auto; scrollbar-width: thin; }

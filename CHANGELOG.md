@@ -4,6 +4,15 @@ All notable changes to LiveType are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [4.0.2] - 2026-11-26
+
+### Fixed
+- Code mode in Firefox: pressing Enter on an empty line could hide the
+  cursor, because the typing area scrolled a line ahead of the code.
+- Code mode: the code area now fills the whole editor instead of being a
+  smaller box that grew line by line, and clicking anywhere in it places the
+  cursor.
+
 ## [4.0.1] - 2026-11-26
 
 ### Added
@@ -221,6 +230,7 @@ All notable changes to LiveType are recorded here. The format follows
 - Live typing session with a shareable viewer link, write requests, and host
   approve, deny and take-back controls. Single Go binary with embedded web assets.
 
+[4.0.2]: https://github.com/GaneshBalki/livetype/compare/v4.0.1...v4.0.2
 [4.0.1]: https://github.com/GaneshBalki/livetype/compare/v4.0.0...v4.0.1
 [4.0.0]: https://github.com/GaneshBalki/livetype/compare/v3.1.0...v4.0.0
 [3.1.0]: https://github.com/GaneshBalki/livetype/compare/v3.0.1...v3.1.0
