@@ -1,6 +1,6 @@
 /* Design tokens. Every color goes through these so dark mode is one override. */
 :root {
-  color-scheme: light dark;
+  color-scheme: light;
   --bg: #f6f6f8;
   --glow: rgb(99 102 241 / .13);
   --surface: #ffffff;
@@ -28,8 +28,9 @@
   --radius-sm: 10px;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
+/* Dark tokens; js/theme.js sets data-theme from the saved choice or the system. */
+:root[data-theme="dark"] {
+    color-scheme: dark;
     --bg: #0b0b10;
     --glow: rgb(129 140 248 / .16);
     --surface: #14141b;
@@ -50,7 +51,6 @@
     --danger-soft: rgb(255 107 112 / .1);
     --shadow-sm: 0 1px 2px rgb(0 0 0 / .4);
     --shadow: 0 1px 2px rgb(0 0 0 / .3), 0 16px 40px -16px rgb(0 0 0 / .7);
-  }
 }
 
 /* ---------- base ---------- */
@@ -321,12 +321,12 @@ input[type="range"] { width: 88px; margin: 0; accent-color: var(--accent); }
   scrollbar-width: thin;
   scrollbar-color: var(--border-strong) transparent;
 }
-.text::placeholder { color: var(--muted); opacity: .7; }
-textarea.text[readonly] { color: var(--muted); cursor: default; }
-pre.text:empty::before { content: "Nothing yet. Text appears here as it's typed."; color: var(--muted); font: 15px var(--sans); }
+.text[contenteditable="false"] { color: var(--muted); cursor: default; }
+.text[data-placeholder]:empty::before { content: attr(data-placeholder); color: var(--muted); opacity: .7; }
+.text.live:empty::before { content: "Nothing yet. Text appears here as it's typed."; color: var(--muted); font: 15px var(--sans); }
 
 /* A blinking caret after the live text while the session is connected. */
-pre.text::after {
+.text.live::after {
   content: "";
   display: inline-block;
   width: 2px;
@@ -337,7 +337,70 @@ pre.text::after {
   vertical-align: -.2em;
   visibility: hidden;
 }
-body:has(#status[data-state="live"]) pre.text::after { visibility: visible; animation: blink 1.1s step-end infinite; }
+body:has(#status[data-state="live"]) .text.live::after { visibility: visible; animation: blink 1.1s step-end infinite; }
+
+/* ---------- formatting toolbar ---------- */
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-2);
+}
+.tool-group { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 2px; }
+.tool-group + .tool-group { padding-left: 14px; border-left: 1px solid var(--border); }
+.tool {
+  height: 30px;
+  min-width: 30px;
+  padding: 0 7px;
+  border-color: transparent;
+  border-radius: 7px;
+  background: transparent;
+  box-shadow: none;
+  font-size: 14px;
+  font-weight: 500;
+}
+.tool[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); }
+select.tool.narrow { width: 58px; }
+.tool sup, .tool sub { font-size: .65em; }
+select.tool {
+  max-width: 132px;
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--fg);
+  font: 13px var(--sans);
+  cursor: pointer;
+}
+.mark-fg, .mark-hl { padding: 0 2px; border-bottom: 3px solid var(--swatch); line-height: 1.1; }
+.tool-color { width: 16px; height: 30px; margin-left: -4px; padding: 0; border: 0; background: none; cursor: pointer; }
+.tool-color::-webkit-color-swatch-wrapper { padding: 9px 0; }
+.tool-color::-webkit-color-swatch { border: 1px solid var(--border-strong); border-radius: 3px; }
+.toolbar :disabled { opacity: .45; cursor: default; }
+
+/* Dark mode toggle: show the moon in light mode, the sun in dark mode. */
+.theme-toggle { width: 34px; padding: 0; }
+.writer:empty + .theme-toggle { margin-left: auto; }
+.theme-toggle .sun, [data-theme="dark"] .theme-toggle .moon { display: none; }
+[data-theme="dark"] .theme-toggle .sun { display: block; }
+
+/* Download menu */
+.download { position: relative; }
+.download > summary { list-style: none; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px;
+  border: 1px solid var(--border-strong); border-radius: 8px; background: var(--surface); font-size: 13px; font-weight: 550; }
+.download > summary::-webkit-details-marker { display: none; }
+.download .menu { position: absolute; right: 0; top: 36px; z-index: 5; display: grid; gap: 2px; padding: 4px; min-width: 150px;
+  border: 1px solid var(--border); border-radius: 10px; background: var(--surface); box-shadow: var(--shadow); }
+.download .menu button { justify-content: flex-start; border: 0; box-shadow: none; background: none; }
+
+/* Download as PDF prints only the document. */
+@media print {
+  body > *:not(main), .doc-head, .toolbar, .share, .requests, #writer-banner { display: none !important; }
+  main, .doc, .text:not([hidden]) { display: block !important; overflow: visible !important; height: auto !important; border: 0 !important; box-shadow: none !important; }
+  .text { color: #000 !important; background: #fff !important; }
+  .text.live::after { display: none; }
+}
 
 /* ---------- app pages ---------- */
 

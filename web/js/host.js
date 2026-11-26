@@ -1,4 +1,4 @@
-import { $, roomId, connect, makeEditor, toast, copy, setStatus, plural } from './common.js';
+import { $, roomId, connect, makeEditor, makeToolbar, bindDownloads, toast, copy, setStatus, plural } from './common.js';
 
 const hostKey = new URLSearchParams(location.hash.slice(1)).get('k');
 const viewerUrl = `${location.origin}/v/${encodeURIComponent(roomId)}`;
@@ -25,6 +25,10 @@ function start() {
     },
   });
   const editor = makeEditor($('editor'), conn, () => toast('Text is over 200 KB. Changes are not being sent.'));
+  const toolbar = makeToolbar($('editor'));
+  $('editor').before(toolbar.el);
+
+  bindDownloads(() => $('editor').innerHTML);
 
   $('take-back').addEventListener('click', () => conn.send({ type: 'revoke' }));
 
@@ -34,10 +38,12 @@ function start() {
         editor.welcome(m.text, !m.writer);
         showWriter(m.writer);
         showPresence(m);
+        toolbar.setEnabled(editor.writable);
         break;
       case 'snapshot':
         editor.snapshot(m.text);
         editor.setWritable(!m.writer);
+        toolbar.setEnabled(editor.writable);
         showWriter(m.writer);
         break;
       case 'requests':
@@ -97,7 +103,8 @@ function showPresence(m) {
 function end(reason) {
   ended = true;
   setStatus('ended', 'Ended');
-  $('editor').readOnly = true;
+  $('editor').contentEditable = false;
+  document.querySelector('.toolbar')?.remove();
   $('writer-banner').hidden = true;
   $('ended').textContent = reason;
   $('ended').hidden = false;

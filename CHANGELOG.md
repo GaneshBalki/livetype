@@ -1,0 +1,52 @@
+# Changelog
+
+All notable changes to LiveType are recorded here. The format follows
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
+[Semantic Versioning](https://semver.org/).
+
+## [2.0.0] - 2026-11-26
+
+### Added
+- **Rich text formatting toolbar** for whoever holds the pen (host or an approved viewer):
+  font family, font size, grow/shrink, change case (Sentence case, lowercase,
+  UPPERCASE, Capitalize Each Word, tOGGLE cASE), clear formatting, bold, italic,
+  underline, strikethrough, subscript, superscript, highlight color and font color.
+  Ctrl/Cmd+B, I and U work as shortcuts, and active styles are shown on the buttons.
+- **Dark mode toggle** in the header of every page. It follows the system setting
+  until the user picks, then remembers the choice across pages and visits.
+- **Download** menu on the host and viewer pages:
+  - **Word (.doc)** keeps the formatting.
+  - **PDF** uses the browser's print dialog ("Save as PDF") and prints only the document.
+- End-to-end browser test (`web/test/e2e.mjs`) and a sanitizer self-check page
+  (`web/test/sanitize.html`).
+
+### Changed
+- **Breaking:** the shared document is now HTML instead of plain text. The editor is
+  a rich-text area instead of a `<textarea>`. Clients from 1.x and 2.0 cannot share
+  a session, so deploy server and clients together. Sessions are in memory, so no
+  data migration is needed.
+- Pasted content is inserted as plain text and takes the formatting at the cursor.
+- Theme is controlled by a `data-theme` attribute (set by `js/theme.js`) instead
+  of only the system color scheme.
+
+### Security
+- Every page rebuilds incoming document HTML from an allowlist (`js/sanitize.js`)
+  before displaying it, because a viewer holding the pen can send arbitrary HTML.
+  Only formatting tags and a small set of safe styles survive. Scripts, event
+  handlers, links, images and `url()` values are removed.
+- The Content-Security-Policy is unchanged and still blocks inline styles and scripts.
+
+### Known limitations
+- Download is `.doc` (HTML that Word opens), not `.docx`.
+- Change case rewrites the selection as plain text, so mixed formatting inside it is lost.
+- Formatting uses `document.execCommand`. It is deprecated but supported by all
+  current browsers. Tested in Chromium. Firefox and Safari need a manual check.
+
+## [1.0.0]
+
+### Added
+- Live typing session with a shareable viewer link, write requests, and host
+  approve, deny and take-back controls. Single Go binary with embedded web assets.
+
+[2.0.0]: https://github.com/GaneshBalki/livetype/compare/v1.0.0...v2.0.0
+[1.0.0]: https://github.com/GaneshBalki/livetype/releases/tag/v1.0.0

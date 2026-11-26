@@ -1,0 +1,19 @@
+<!doctype html><meta charset="utf-8"><title>sanitize self-check</title>
+<!-- Serve web/ over http and open /test/sanitize.html; prints PASS or FAIL. Not embedded in the binary. -->
+<script type="module">
+import { sanitize } from '/js/sanitize.js';
+const out = (h) => { const d = document.createElement('div'); d.append(sanitize(h)); return d.innerHTML; };
+const cases = [
+  ['<b onclick="x()">hi</b>', '<b>hi</b>'],
+  ['<img src=x onerror=alert(1)>ok', 'ok'],
+  ['<script>alert(1)<\/script>t', 't'],
+  ['<a href="javascript:x">l</a>', 'l'],
+  ['<span style="color: red; background-image: url(http://e)">c</span>', '<span style="color: red;">c</span>'],
+  ['<font face="Arial" onmouseover="x">f</font>', '<font face="Arial">f</font>'],
+  ['a &lt; b\nline', 'a &lt; b\nline'],
+  ['<font color="#0f0" style="background-color: rgb(1, 2, 3); position: fixed">h</font>', '<font color="#0f0" style="background-color: rgb(1, 2, 3);">h</font>'],
+  ['<span style="color: red; font-family: \\61 url(x)">e</span>', '<span style="color: red;">e</span>'],
+];
+const bad = cases.filter(([i, want]) => out(i) !== want).map(([i, want]) => `${i} => ${out(i)} (want ${want})`);
+document.body.textContent = bad.length ? 'FAIL ' + bad.join(' | ') : 'PASS';
+</script>
