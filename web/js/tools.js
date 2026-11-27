@@ -3,7 +3,7 @@
 // "Share live", which starts a normal session.
 import { $, toast, copy } from './common.js';
 import { codeView, paint, codeHtml } from './code.js';
-import { jsonFormat, b64encode, b64decode, urlEncode, urlDecode, urlParts, jwtDecode, parseTime, relative } from './toolcore.js';
+import { jsonFormat, b64encode, b64decode, urlEncode, urlDecode, urlParts, jwtDecode, parseTime, relative, regexRun, CASES, convertCase, textStats, mdToHtml, HASHES, hashText, uuid7, uuidInfo } from './toolcore.js';
 
 const root = $('tool');
 const id = root.dataset.tool;
@@ -285,11 +285,164 @@ const TOOLS = {
       res);
     run();
   },
+
+  regex() {
+    const s = { pattern: '\\b(\\w+)@(\\w+)\\.com\\b', flags: 'g', text: 'Write to asha@example.com or ravi@devshire.com', repl: '', ...saved };
+    const pat = h('input', 'tl-field tl-mono'); pat.value = s.pattern; pat.spellcheck = false; pat.placeholder = 'Pattern, without slashes';
+    const flagBox = h('span', 'tl-opts');
+    for (const [f, label] of [['g', 'g: all'], ['i', 'i: ignore case'], ['m', 'm: multiline'], ['s', 's: dot all'], ['u', 'u: unicode']]) {
+      flagBox.append(check(label, s.flags.includes(f), (on) => { s.flags = on ? s.flags + f : s.flags.replace(f, ''); run(); }));
+    }
+    const input = area('Text to test', 8); input.value = s.text;
+    const hl = h('pre', 'tl-pre tl-hl');
+    const list = h('div');
+    const repl = h('input', 'tl-field tl-mono'); repl.value = s.repl; repl.placeholder = 'Replace with, e.g. $2: $1 (optional)';
+    const replOut = out();
+    const stat = h('span', 'muted small tl-stat');
+    const run = () => {
+      Object.assign(s, { pattern: pat.value, text: input.value, repl: repl.value }); save(s);
+      list.replaceChildren(); hl.replaceChildren();
+      if (!s.pattern) { stat.textContent = ''; hl.textContent = s.text; return replOut.empty('Type a pattern above.'); }
+      const r = regexRun(s.pattern, s.flags, s.text, s.repl || null);
+      if (r.error) { stat.textContent = r.error; stat.className = 'small tl-stat bad'; hl.textContent = s.text; return replOut.empty(''); }
+      stat.textContent = r.matches.length ? `${r.matches.length}${r.capped ? '+' : ''} match${r.matches.length === 1 ? '' : 'es'}` : 'No match';
+      stat.className = 'small tl-stat ' + (r.matches.length ? 'ok' : 'muted');
+      let at = 0;
+      for (const m of r.matches) { hl.append(s.text.slice(at, m.index), h('mark', '', m.text)); at = m.index + m.text.length; }
+      hl.append(s.text.slice(at));
+      const found = r.matches.slice(0, 200).map((m, i) => [`Match ${i + 1} at ${m.index}`, m.text,
+        [...m.groups.map((g, j) => `$${j + 1}=${g ?? '–'}`), ...Object.entries(m.named || {}).map(([k, v]) => `${k}=${v ?? '–'}`)].join('  ')]);
+      if (found.length) list.append(box('Matches', rows(found)));
+      if (s.repl) replOut.set(r.replaced); else replOut.empty('Type a replacement above to preview it.');
+    };
+    for (const e of [pat, input, repl]) e.addEventListener('input', debounce(run));
+    root.append(
+      bar(h('label', 'tl-field-wrap', h('span', 'tl-box-title', 'Pattern'), pat), stat),
+      bar(flagBox),
+      h('div', 'tl-two', box('Text', input), box('Highlighted', hl)),
+      list,
+      bar(h('label', 'tl-field-wrap', h('span', 'tl-box-title', 'Replace'), repl)),
+      box('After replace', replOut.el, copyBtn(() => replOut.text)),
+    );
+    run();
+  },
+
+  case() {
+    const s = { text: 'user account id\nHTTPServerError', ...saved };
+    const input = area('Type or paste text (one item per line)', 6); input.value = s.text;
+    const res = h('div');
+    const run = () => {
+      s.text = input.value; save(s);
+      res.replaceChildren(s.text.trim() ? rows(Object.keys(CASES).map((k) => [CASES[k][0], convertCase(s.text, k)])) : h('p', 'muted tl-empty', 'Every case appears here.'));
+    };
+    input.addEventListener('input', debounce(run));
+    root.append(box('Input', input, button('Clear', () => { input.value = ''; run(); input.focus(); })), box('Converted', res));
+    run();
+  },
+
+  words() {
+    const s = { text: '', ...saved };
+    const input = area('Type or paste your text', 12); input.value = s.text;
+    const grid = h('div', 'tl-stats');
+    const top = h('div');
+    const mins = (m) => (m < 1 ? `${Math.round(m * 60)} sec` : `${Math.floor(m)} min ${Math.round((m % 1) * 60)} sec`);
+    const run = () => {
+      s.text = input.value; save(s);
+      const t = textStats(s.text);
+      grid.replaceChildren(...[['Words', t.words], ['Characters', t.chars], ['Without spaces', t.noSpaces], ['Sentences', t.sentences],
+        ['Paragraphs', t.paragraphs], ['Lines', t.lines], ['Reading time', mins(t.readMin)], ['Speaking time', mins(t.speakMin)]]
+        .map(([k, v]) => h('div', 'tl-stat-box', h('b', '', typeof v === 'number' ? v.toLocaleString() : v), h('span', 'muted small', k))));
+      top.replaceChildren();
+      if (t.top.length) top.append(box('Most used words (4+ letters)', rows(t.top.map(([w, n]) => [w, `${n}×`]))));
+    };
+    input.addEventListener('input', debounce(run, 80));
+    root.append(grid, box('Text', input, button('Clear', () => { input.value = ''; run(); input.focus(); })), top);
+    run();
+  },
+
+  markdown() {
+    const s = { text: EXAMPLE_MD, ...saved };
+    const input = area('Write Markdown', 20); input.value = s.text;
+    const view = h('div', 'tl-md');
+    let html = '';
+    const run = () => {
+      s.text = input.value; save(s);
+      html = mdToHtml(s.text);
+      // Safe: mdToHtml escapes every character of the input before adding its own tags.
+      view.innerHTML = html || '<p class="muted">The preview appears here.</p>';
+    };
+    input.addEventListener('input', debounce(run, 80));
+    root.append(
+      bar(grow(), button('Clear', () => { input.value = ''; run(); input.focus(); }), shareBtn('markdown', () => input.value)),
+      h('div', 'tl-two', box('Markdown', input, copyBtn(() => input.value)), box('Preview', view, h('span', 'muted small', 'HTML'), copyBtn(() => html))),
+    );
+    run();
+  },
+
+  hash() {
+    const s = { text: '', expect: '', ...saved };
+    const input = area('Type or paste text to hash', 6); input.value = s.text;
+    const exp = h('input', 'tl-field tl-mono'); exp.value = s.expect; exp.placeholder = 'Optional: paste a hash to compare'; exp.spellcheck = false;
+    const res = h('div');
+    let n = 0;
+    const run = async () => {
+      s.text = input.value; s.expect = exp.value.trim().toLowerCase(); save(s);
+      const my = ++n;
+      const list = await Promise.all(HASHES.map(async (a) => [a, await hashText(s.text, a)]));
+      if (my !== n) return;
+      const t = rows(list);
+      if (s.expect) [...t.children].forEach((r, i) => r.classList.add(list[i][1] === s.expect ? 'match' : 'nomatch'));
+      res.replaceChildren(box(s.text ? 'Hashes (UTF-8)' : 'Hashes of empty text', t));
+      if (s.expect && !list.some(([, v]) => v === s.expect)) res.append(h('p', 'tl-err', 'No hash matches the one you pasted.'));
+    };
+    input.addEventListener('input', debounce(run));
+    exp.addEventListener('input', debounce(run));
+    root.append(box('Text', input, button('Clear', () => { input.value = ''; run(); input.focus(); })),
+      bar(h('label', 'tl-field-wrap', h('span', 'tl-box-title', 'Compare with'), exp)), res);
+    run();
+  },
+
+  uuid() {
+    const s = { ver: '4', count: 5, upper: false, hyphens: true, check: '', ...saved };
+    const o = out();
+    const count = h('input', 'tl-field tl-num'); count.type = 'number'; count.min = 1; count.max = 1000; count.value = s.count;
+    const gen = () => {
+      s.count = Math.min(1000, Math.max(1, parseInt(count.value, 10) || 1)); count.value = s.count; save(s);
+      const list = Array.from({ length: s.count }, () => {
+        let u = s.ver === '7' ? uuid7() : crypto.randomUUID();
+        if (!s.hyphens) u = u.replace(/-/g, '');
+        return s.upper ? u.toUpperCase() : u;
+      });
+      o.set(list.join('\n'));
+    };
+    const chk = h('input', 'tl-field tl-mono'); chk.value = s.check; chk.placeholder = 'Paste a UUID to inspect'; chk.spellcheck = false;
+    const info = h('div');
+    const inspect = () => {
+      s.check = chk.value; save(s);
+      if (!s.check.trim()) return info.replaceChildren();
+      const r = uuidInfo(s.check);
+      if (!r) return info.replaceChildren(h('p', 'tl-err', 'This is not a UUID (32 hex digits, usually in 8-4-4-4-12 groups).'));
+      const list = [['Version', r.nil ? 'Nil UUID (all zeros)' : r.max ? 'Max UUID (all ones)' : `v${r.version}`]];
+      if (r.date) list.push(['Created', r.date.toISOString(), relative(r.date)]);
+      info.replaceChildren(rows(list));
+    };
+    count.addEventListener('change', gen);
+    chk.addEventListener('input', debounce(inspect));
+    root.append(
+      bar(seg([['4', 'v4 random'], ['7', 'v7 time-ordered']], s.ver, (v) => { s.ver = v; gen(); }, 'Version'),
+        h('label', 'opt', 'How many ', count), check('Upper case', s.upper, (v) => { s.upper = v; gen(); }),
+        check('Hyphens', s.hyphens, (v) => { s.hyphens = v; gen(); }), grow(), button('Generate again', gen, 'primary sm')),
+      box('UUIDs', o.el, copyBtn(() => o.text)),
+      box('Inspect a UUID', h('div', 'tl-pad', chk, info)),
+    );
+    gen(); inspect();
+  },
 };
 
 const size = (t) => { const b = new TextEncoder().encode(t).length; return b < 1024 ? `${b} B` : `${(b / 1024).toFixed(1)} KB`; };
 
 const EXAMPLE_JSON = '{"order":{"id":"A-1042","placed":"2026-11-27T10:15:00Z","items":[{"sku":"TEA-01","qty":2,"price":249},{"sku":"MUG-07","qty":1,"price":399}],"paid":true,"coupon":null}}';
+const EXAMPLE_MD = '# Release notes\n\nVersion **4.5** adds six tools. See [all tools](https://devshire.in/tools).\n\n- [x] Regex tester\n- [x] Markdown preview\n- [ ] Something next\n\n| Tool | Runs in |\n|---|---|\n| Hash | your browser |\n\n> Nothing is uploaded.\n\n```js\nconst id = crypto.randomUUID();\n```\n';
 const EXAMPLE_JWT = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyXzQyIiwibmFtZSI6IkFzaGEiLCJyb2xlIjoiZWRpdG9yIiwiaWF0IjoxNzY0MjI0MDAwLCJleHAiOjE3NjQyMjc2MDB9.2kBmmLd6Gx8h8cB7cxJ2yr6t3rM1XYk8q1Yx2n8Jt0Q';
 
 if (TOOLS[id]) {
