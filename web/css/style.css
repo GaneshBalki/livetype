@@ -972,3 +972,15 @@ button.end-session:hover { background: var(--danger-soft); }
 .cf-acts { margin-left: auto; flex-wrap: wrap; }
 @media (max-width: 760px) { .cf-acts { margin-left: 0; width: 100%; } .cf-acts button { flex: 1; } }
 
+.d-open { display: inline-grid; place-items: center; width: 30px; height: 30px; padding: 0; margin-left: auto; border: 1px solid var(--border-strong); border-radius: 8px; background: var(--surface); color: var(--fg); cursor: pointer; }
+.d-open:hover { border-color: var(--muted); color: var(--accent); }
+.d-open .icon { width: 16px; height: 16px; margin: 0; }
+.diff-title { display: flex; align-items: center; gap: 12px; }
+.diff-help > summary { width: 26px; height: 26px; font-size: 14px; }
+.diff-help .info-pop { left: 0; right: auto; width: min(460px, calc(100vw - 32px)); padding: 14px 16px; font-size: 14px; color: var(--fg); }
+.diff-help .info-pop ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; line-height: 1.5; color: var(--muted); }
+.diff-help .info-pop b { color: var(--fg); }
+.diff-title { position: relative; } .diff-title .diff-help { position: static; }
+.d-open { position: relative; }
+.d-open::after { content: attr(data-tip); position: absolute; right: 0; bottom: calc(100% + 8px); z-index: 10; padding: 6px 10px; border-radius: 8px; background: var(--fg); color: var(--bg); font-size: 12px; font-weight: 550; white-space: nowrap; pointer-events: none; opacity: 0; transform: translateY(4px); transition: opacity .15s, transform .15s; }
+.d-open:hover::after, .d-open:focus-visible::after { opacity: 1; transform: none; }

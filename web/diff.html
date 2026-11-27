@@ -26,17 +26,28 @@
 </header>
 <main class="diff-main">
   <div class="diff-intro">
-    <h1>Diff checker</h1>
+    <div class="diff-title"><h1>Diff checker</h1>
+      <details class="info diff-help"><summary aria-label="How it works" title="How it works">i</summary>
+        <div class="info-pop"><b>How it works</b>
+      <ul>
+      <li><b>Line and word changes:</b> removed lines are red, added lines green, and the exact words that changed are marked.</li>
+      <li><b>Unchanged parts fold away.</b> Click "unchanged lines" to show them. Jump between changes with ↑ ↓ or Alt+↑ / Alt+↓.</li>
+      <li><b>Merge:</b> the → and ← arrows on a change copy it from one side to the other.</li>
+      <li><b>Ignore text:</b> skip parts that always differ, like dates or IDs. Plain text or a regular expression.</li>
+      <li><b>Private:</b> the comparison runs on your device. Your text is never sent to a server. Share links keep the text inside the link itself, so we never store it.</li>
+      <li><b>Discuss live:</b> opens a DevShire session with the diff, so you can walk a teammate, student or candidate through the changes as you type.</li>
+    </ul>
+        </div></details></div>
     <p class="muted">Paste two versions of text or code. Changes show up as you type. Everything stays in your browser: nothing is uploaded or saved.</p>
   </div>
 
   <div class="diff-inputs">
     <section class="diff-side">
-      <div class="diff-side-head"><label for="left">Original</label><span class="d-file muted small"></span><button type="button" id="open-left" class="ghost sm"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V3M7 8l5-5 5 5M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></svg>Open file</button><input type="file" id="open-left-file" hidden></div>
+      <div class="diff-side-head"><label for="left">Original</label><span class="d-file muted small"></span><button type="button" id="open-left" class="d-open" data-tip="Open a file from your computer" aria-label="Open a file from your computer"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg></button><input type="file" id="open-left-file" hidden></div>
       <textarea id="left" class="diff-input" spellcheck="false" wrap="off" autocapitalize="off" autocomplete="off" placeholder="Paste the original text, or drop a file here"></textarea>
     </section>
     <section class="diff-side">
-      <div class="diff-side-head"><label for="right">Changed</label><span class="d-file muted small"></span><button type="button" id="open-right" class="ghost sm"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V3M7 8l5-5 5 5M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></svg>Open file</button><input type="file" id="open-right-file" hidden></div>
+      <div class="diff-side-head"><label for="right">Changed</label><span class="d-file muted small"></span><button type="button" id="open-right" class="d-open" data-tip="Open a file from your computer" aria-label="Open a file from your computer"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg></button><input type="file" id="open-right-file" hidden></div>
       <textarea id="right" class="diff-input" spellcheck="false" wrap="off" autocapitalize="off" autocomplete="off" placeholder="Paste the changed text, or drop a file here"></textarea>
     </section>
   </div>
@@ -71,17 +82,6 @@
 
   <div id="result" class="card diff-out" aria-live="off"></div>
 
-  <section class="diff-about prose">
-    <h2>How it works</h2>
-    <ul>
-      <li><b>Line and word changes:</b> removed lines are red, added lines green, and the exact words that changed are marked.</li>
-      <li><b>Unchanged parts fold away.</b> Click "unchanged lines" to show them. Jump between changes with ↑ ↓ or Alt+↑ / Alt+↓.</li>
-      <li><b>Merge:</b> the → and ← arrows on a change copy it from one side to the other.</li>
-      <li><b>Ignore text:</b> skip parts that always differ, like dates or IDs. Plain text or a regular expression.</li>
-      <li><b>Private:</b> the comparison runs on your device. Your text is never sent to a server. Share links keep the text inside the link itself, so we never store it.</li>
-      <li><b>Discuss live:</b> opens a DevShire session with the diff, so you can walk a teammate, student or candidate through the changes as you type.</li>
-    </ul>
-  </section>
 </main>
 <footer class="foot">DevShire · <a href="/">Live sessions</a> · <a href="/privacy">Privacy</a> · <a href="https://github.com/GaneshBalki/livetype">GitHub</a></footer>
 <div id="toast" class="toast" role="status" hidden></div>

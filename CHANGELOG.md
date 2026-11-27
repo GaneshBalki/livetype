@@ -4,6 +4,12 @@ All notable changes to LiveType are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [4.3.1] - 2026-11-27
+
+### Changed
+
+- Diff checker: "Open file" is now a compact file icon (hover says "Open a file from your computer"), and "How it works" moved into an (i) button next to the title.
+
 ## [4.3.0] - 2026-11-27
 
 ### Added
@@ -283,6 +289,7 @@ All notable changes to LiveType are recorded here. The format follows
 - Live typing session with a shareable viewer link, write requests, and host
   approve, deny and take-back controls. Single Go binary with embedded web assets.
 
+[4.3.1]: https://github.com/GaneshBalki/livetype/compare/v4.3.0...v4.3.1
 [4.3.0]: https://github.com/GaneshBalki/livetype/compare/v4.2.0...v4.3.0
 [4.2.0]: https://github.com/GaneshBalki/livetype/compare/v4.1.1...v4.2.0
 [4.1.1]: https://github.com/GaneshBalki/livetype/compare/v4.1.0...v4.1.1
