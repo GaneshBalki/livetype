@@ -4,6 +4,18 @@ All notable changes to LiveType are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [4.3.0] - 2026-11-27
+
+### Added
+
+- Diff checker at devshire.in/diff. Compare two texts or files side by side or unified, with word-level highlights, ignore whitespace or case, jump between changes, and copy the diff. It runs entirely in the browser; nothing is uploaded.
+- "Discuss live" on the diff checker starts a session with the diff already loaded.
+- Diff language in code mode.
+- Diff checker options: Smart, word or character highlights; syntax colours (auto from the file name); ignore text such as dates or IDs (plain text or a regular expression); wrap lines; fold unchanged lines; line numbers in both boxes.
+- Merge arrows copy a single change from one side to the other.
+- Share link: the text travels inside the link itself, so nothing is stored on our server.
+- Save PDF prints just the comparison.
+
 ## [4.2.0] - 2026-11-26
 
 ### Added
@@ -271,6 +283,7 @@ All notable changes to LiveType are recorded here. The format follows
 - Live typing session with a shareable viewer link, write requests, and host
   approve, deny and take-back controls. Single Go binary with embedded web assets.
 
+[4.3.0]: https://github.com/GaneshBalki/livetype/compare/v4.2.0...v4.3.0
 [4.2.0]: https://github.com/GaneshBalki/livetype/compare/v4.1.1...v4.2.0
 [4.1.1]: https://github.com/GaneshBalki/livetype/compare/v4.1.0...v4.1.1
 [4.1.0]: https://github.com/GaneshBalki/livetype/compare/v4.0.2...v4.1.0

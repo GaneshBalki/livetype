@@ -1,3 +1,5 @@
+import { markerRe } from './conflict.js';
+
 // Developer mode. A code document is stored as one <pre data-lang="go">…</pre>,
 // so the server, replay and downloads treat it like any other document.
 // Highlighting is a small tokenizer: comments, strings, numbers, keywords,
@@ -20,8 +22,14 @@ export const LANGS = {
   sql: { name: 'SQL', ext: 'sql', line: '--', block: true, str: `'"`, nocase: true, kw: kw('select from where and or not insert into values update set delete create table alter drop index join left right inner outer on as group by order having limit offset distinct null is in like between case when then else end primary key foreign references union all count sum avg min max') },
   shell: { name: 'Shell', ext: 'sh', line: '#', str: `"'`, kw: kw('if then else elif fi for while do done case esac in function return exit echo export local cd ls grep sed awk cat sudo') },
   json: { name: 'JSON', ext: 'json', str: '"', kw: kw('true false null') },
+  diff: { name: 'Diff', ext: 'diff', diff: true },
   plain: { name: 'Plain code', ext: 'txt', plain: true },
 };
+
+// langOf guesses the language from a file name ('' when unknown).
+const EXT = { mjs: 'javascript', cjs: 'javascript', jsx: 'javascript', tsx: 'typescript', h: 'c', hpp: 'cpp', cc: 'cpp', bash: 'shell', zsh: 'shell', patch: 'diff' };
+for (const [id, l] of Object.entries(LANGS)) if (!l.plain) EXT[l.ext] ??= id;
+export const langOf = (name) => (name && name.includes('.') ? EXT[name.split('.').pop().toLowerCase()] || '' : '');
 
 const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const res = {};
@@ -35,12 +43,50 @@ function tokenRe(id) {
   return new RegExp(`(${com.join('|') || '(?!)'})|(${str.join('|') || '(?!)'})|(\\b(?:0x[\\da-fA-F]+|\\d[\\d_]*(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)\\b)|(${l.hash ? '#?' : ''}[A-Za-z_$][\\w$]*)`, 'g');
 }
 
-// highlight returns coloured spans for code.
+// highlight returns coloured spans for code. Merge conflict blocks get their
+// marker lines and both sides marked, with the code inside still coloured.
 export function highlight(code, id) {
+  if (!/^(?:<{7}|>{7})(?: |$)/m.test(code)) return tokens(code, id);
+  const out = document.createDocumentFragment();
+  let side = '', buf = '';
+  const put = () => {
+    if (!buf) return;
+    const f = tokens(buf, id);
+    if (side) { const s = document.createElement('span'); s.className = `cf-${side}`; s.append(f); out.append(s); } else out.append(f);
+    buf = '';
+  };
+  code.split(/(?<=\n)/).forEach((line) => {
+    const bare = line.replace(/\r?\n$/, '');
+    if (!markerRe.test(bare)) { buf += line; return; }
+    put();
+    const m = document.createElement('span');
+    m.className = 'tok-cm';
+    m.textContent = bare;
+    out.append(m, line.slice(bare.length));
+    side = bare[0] === '<' ? 'ours' : bare[0] === '|' ? 'base' : bare[0] === '=' ? 'theirs' : '';
+  });
+  put();
+  return out;
+}
+
+function tokens(code, id) {
   const out = document.createDocumentFragment();
   const l = LANGS[id];
   if (!l || l.plain) {
     out.append(code);
+    return out;
+  }
+  if (l.diff) {
+    // Whole lines: + added, - removed, @@ hunk headers.
+    code.split('\n').forEach((line, i) => {
+      if (i) out.append('\n');
+      const cls = /^(\+\+\+|---|@@)/.test(line) ? 'c' : line[0] === '+' ? 'add' : line[0] === '-' ? 'del' : '';
+      if (!cls) return out.append(line);
+      const s = document.createElement('span');
+      s.className = `tok-${cls}`;
+      s.textContent = line;
+      out.append(s);
+    });
     return out;
   }
   const re = (res[id] ??= tokenRe(id));
