@@ -53,6 +53,7 @@ function start() {
     switch (m.type) {
       case 'welcome':
         editor.welcome(m.text, !m.writer);
+        seed(m.text, editor);
         showWriter(m.writer);
         showPresence(m);
         toolbar.setEnabled(editor.writable);
@@ -214,4 +215,11 @@ function showExpiry({ at, max }) {
   $('extend').disabled = full;
   $('extend').title = full ? 'Sessions last at most 7 days.' : 'Keep this session for 24 more hours (up to 7 days in total)';
   $('expiry').hidden = ended;
+}
+
+// A diff opened with "Discuss live" on /diff waits in sessionStorage for its new session.
+function seed(text, editor) {
+  let s;
+  try { s = JSON.parse(sessionStorage.getItem('devshire-seed')); sessionStorage.removeItem('devshire-seed'); } catch { return; }
+  if (s?.room === roomId && !text && typeof s.html === 'string') editor.load(s.html);
 }

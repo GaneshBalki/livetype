@@ -127,6 +127,13 @@ export function makeEditor(el, conn, onTooLarge) {
       else show(text);
     },
 
+    // load replaces the document with html (used to open a diff in a new session).
+    load(html) {
+      if (!writable) return;
+      show(html);
+      flush();
+    },
+
     snapshot(text) {
       known = text;
       if (!writable) show(text);

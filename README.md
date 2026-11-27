@@ -25,6 +25,7 @@ everyone sees your code or text appear as you type. No account, no install, free
 - **Watching list:** see who is in the session.
 - **Replay:** watch how the text was written, with a timeline and speed control.
 - **Download:** Word, PDF, or a source file (`.py`, `.go`, …) for code.
+- **Diff checker:** compare two texts at [devshire.in/diff](https://devshire.in/diff), in your browser.
 - **Light and dark mode.**
 - **Reliable:** sessions survive server restarts, and everyone reconnects automatically.
 
