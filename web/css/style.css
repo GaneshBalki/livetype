@@ -1058,3 +1058,32 @@ button.end-session:hover { background: var(--danger-soft); }
 .home-tools-head h2 { margin: 0; font-family: var(--serif); font-weight: 500; }
 .home-tools > p { margin: 8px 0 20px; }
 .home-tools-head a { color: var(--accent); text-decoration: none; font-weight: 600; }
+/* ---- Tools 4.5.0 ---- */
+.tl-mono { font-family: var(--mono); }
+.tl-num { width: 90px; }
+.tl-pad { display: flex; flex-direction: column; gap: 10px; padding: 12px 14px; }
+.tl-pad .tl-row { padding-left: 0; }
+.tl-hl { min-height: 120px; }
+.tl-hl mark { padding: 1px 0; border-radius: 3px; background: color-mix(in srgb, var(--accent) 28%, transparent); color: inherit; }
+.tl-hl mark:nth-of-type(even) { background: color-mix(in srgb, var(--accent) 16%, transparent); }
+.tl-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 16px 0; }
+.tl-stat-box { display: flex; flex-direction: column; gap: 2px; padding: 14px 16px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); }
+.tl-stat-box b { font-size: 22px; font-variant-numeric: tabular-nums; }
+.tl-row.match { background: color-mix(in srgb, var(--live) 14%, transparent); }
+.tl-row.match .tl-row-label::after { content: " ✓ match"; color: var(--live); font-weight: 600; }
+.tl-row.nomatch { opacity: .6; }
+.tl-md { min-height: 120px; max-height: 75vh; overflow: auto; padding: 4px 18px 16px; line-height: 1.6; overflow-wrap: anywhere; }
+.tl-md h1, .tl-md h2, .tl-md h3 { margin: 18px 0 8px; line-height: 1.25; }
+.tl-md h1 { font-size: 26px; } .tl-md h2 { font-size: 21px; } .tl-md h3 { font-size: 17px; }
+.tl-md code { padding: 1px 5px; border-radius: 4px; background: var(--surface-2); font: 13px var(--mono); }
+.tl-md pre { padding: 12px 14px; overflow-x: auto; border-radius: var(--radius-sm); background: var(--surface-2); }
+.tl-md pre code { padding: 0; background: none; }
+.tl-md blockquote { margin: 12px 0; padding: 2px 14px; border-left: 3px solid var(--accent); color: var(--muted); }
+.tl-md table { border-collapse: collapse; margin: 12px 0; }
+.tl-md th, .tl-md td { padding: 6px 12px; border: 1px solid var(--border); text-align: left; }
+.tl-md img { max-width: 100%; }
+.tl-md ul, .tl-md ol { padding-left: 22px; }
+.tl-md li:has(> input) { list-style: none; margin-left: -20px; }
+.tl-md hr { border: 0; border-top: 1px solid var(--border); }
+@media (max-width: 820px) { .tl-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.tl-opts { display: inline-flex; flex-wrap: wrap; gap: 6px 18px; }

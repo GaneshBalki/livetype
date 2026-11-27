@@ -117,3 +117,154 @@ export function relative(date, now = Date.now()) {
   }
   return rtf.format(sec, 'second');
 }
+
+// ---- Regex ----
+// regexRun returns {matches:[{index,text,groups}], replaced?, capped} or {error}.
+// ponytail: runs on the main thread, so a catastrophic pattern can freeze the tab; move to a Worker with a timeout if users hit it.
+export function regexRun(pattern, flags, text, replacement, max = 1000) {
+  let re;
+  try { re = new RegExp(pattern, flags.includes('g') ? flags : flags + 'g'); } catch (e) { return { error: String(e.message).replace(/^Invalid regular expression: \/.*\/[a-z]*: /s, '') }; }
+  const matches = [];
+  let capped = false;
+  for (const m of text.matchAll(re)) {
+    if (matches.length >= max) { capped = true; break; }
+    matches.push({ index: m.index, text: m[0], groups: m.slice(1), named: m.groups || null });
+    if (!flags.includes('g')) break;
+  }
+  const out = { matches, capped };
+  if (replacement != null) out.replaced = text.replace(new RegExp(pattern, flags), replacement);
+  return out;
+}
+
+// ---- Case ----
+// splitWords breaks "helloWorld", "hello_world", "Hello-World", "HTTPServer" into words.
+export function splitWords(s) {
+  return s.replace(/([a-z0-9])([A-Z])/g, '$1 $2').replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2').split(/[^\p{L}\p{N}]+/u).filter(Boolean);
+}
+const cap = (w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
+export const CASES = {
+  camel: ['camelCase', (w) => w.map((x, i) => (i ? cap(x) : x.toLowerCase())).join('')],
+  pascal: ['PascalCase', (w) => w.map(cap).join('')],
+  snake: ['snake_case', (w) => w.map((x) => x.toLowerCase()).join('_')],
+  constant: ['CONSTANT_CASE', (w) => w.map((x) => x.toUpperCase()).join('_')],
+  kebab: ['kebab-case', (w) => w.map((x) => x.toLowerCase()).join('-')],
+  dot: ['dot.case', (w) => w.map((x) => x.toLowerCase()).join('.')],
+  title: ['Title Case', (w) => w.map(cap).join(' ')],
+  sentence: ['Sentence case', (w) => cap(w.join(' '))],
+  lower: ['lower case', (w) => w.join(' ').toLowerCase()],
+  upper: ['UPPER CASE', (w) => w.join(' ').toUpperCase()],
+};
+// convertCase converts each line separately so lists of names keep working.
+export const convertCase = (s, kind) => s.split('\n').map((l) => CASES[kind][1](splitWords(l))).join('\n');
+
+// ---- Word counter ----
+export function textStats(s) {
+  const words = s.match(/[\p{L}\p{N}]+(?:['’-][\p{L}\p{N}]+)*/gu) || [];
+  const freq = new Map();
+  for (const w of words) { const k = w.toLowerCase(); if (k.length > 3) freq.set(k, (freq.get(k) || 0) + 1); }
+  return {
+    chars: [...s].length,
+    noSpaces: [...s.replace(/\s/g, '')].length,
+    words: words.length,
+    sentences: (s.match(/[^.!?\s][^.!?]*(?:[.!?]+|$)/g) || []).length,
+    paragraphs: s.split(/\n\s*\n/).filter((p) => p.trim()).length,
+    lines: s ? s.split('\n').length : 0,
+    readMin: words.length / 200,
+    speakMin: words.length / 130,
+    top: [...freq].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).slice(0, 8),
+  };
+}
+
+// ---- Markdown ----
+const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+// inline works on already-escaped text. Links only allow http(s), mailto, # and relative paths.
+function inline(t) {
+  const codes = [];
+  t = t.replace(/`([^`]+)`/g, (_, c) => `\u0000${codes.push(c) - 1}\u0000`);
+  t = t.replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, (m, alt, u) => (safeUrl(u) ? `<img alt="${alt}" src="${u}">` : m));
+  t = t.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (m, txt, u) => (safeUrl(u) ? `<a href="${u}" rel="noopener noreferrer nofollow" target="_blank">${txt}</a>` : m));
+  t = t.replace(/\*\*(.+?)\*\*|__(.+?)__/g, (_, a, b) => `<strong>${a || b}</strong>`);
+  t = t.replace(/(^|[^*\w])\*(?!\s)(.+?)\*(?!\w)|(^|\W)_(?!\s)(.+?)_(?!\w)/g, (_, p1, a, p2, b) => `${p1 ?? p2}<em>${a ?? b}</em>`);
+  t = t.replace(/~~(.+?)~~/g, '<del>$1</del>');
+  return t.replace(/\u0000(\d+)\u0000/g, (_, i) => `<code>${codes[i]}</code>`);
+}
+const safeUrl = (u) => /^(https?:\/\/|mailto:|#|\/(?!\/)|\.{0,2}\/)/i.test(u.replace(/&amp;/g, '&')) || /^[\w.-]+(\/|$)/.test(u);
+// mdToHtml renders a safe subset of Markdown: every input character is escaped first.
+export function mdToHtml(src) {
+  const lines = esc(src.replace(/\r\n?/g, '\n')).split('\n');
+  const out = [];
+  let i = 0;
+  while (i < lines.length) {
+    const l = lines[i];
+    let m;
+    if ((m = /^(```|~~~)\s*([\w+-]*)/.exec(l))) {
+      const body = [];
+      for (i++; i < lines.length && !lines[i].startsWith(m[1]); i++) body.push(lines[i]);
+      i++;
+      out.push(`<pre><code${m[2] ? ` class="lang-${m[2]}"` : ''}>${body.join('\n')}</code></pre>`);
+    } else if ((m = /^(#{1,6})\s+(.*?)\s*#*$/.exec(l))) {
+      out.push(`<h${m[1].length}>${inline(m[2])}</h${m[1].length}>`); i++;
+    } else if (/^\s{0,3}([-*_])(\s*\1){2,}\s*$/.test(l)) {
+      out.push('<hr>'); i++;
+    } else if (/^&gt;/.test(l)) {
+      const body = [];
+      for (; i < lines.length && /^&gt;/.test(lines[i]); i++) body.push(lines[i].replace(/^&gt;\s?/, ''));
+      out.push(`<blockquote>${mdToHtml(body.join('\n').replace(/&gt;/g, '>').replace(/&lt;/g, '<').replace(/&quot;/g, '"').replace(/&amp;/g, '&'))}</blockquote>`);
+    } else if (/^\s*([-*+]|\d+[.)])\s+/.test(l)) {
+      const ordered = /^\s*\d/.test(l);
+      const items = [];
+      for (; i < lines.length && /^\s*([-*+]|\d+[.)])\s+/.test(lines[i]); i++) {
+        let t = lines[i].replace(/^\s*([-*+]|\d+[.)])\s+/, '');
+        const task = /^\[([ xX])\]\s+/.exec(t);
+        if (task) t = `<input type="checkbox" disabled${task[1] === ' ' ? '' : ' checked'}> ` + inline(t.slice(task[0].length));
+        else t = inline(t);
+        items.push(`<li>${t}</li>`);
+      }
+      out.push(ordered ? `<ol>${items.join('')}</ol>` : `<ul>${items.join('')}</ul>`);
+    } else if (/^\|.*\|\s*$/.test(l) && /^\|[\s:|-]+\|\s*$/.test(lines[i + 1] || '')) {
+      const cells = (r) => r.trim().replace(/^\||\|$/g, '').split('|').map((c) => inline(c.trim()));
+      const head = cells(l);
+      i += 2;
+      const rows = [];
+      for (; i < lines.length && /^\|.*\|\s*$/.test(lines[i]); i++) rows.push(`<tr>${cells(lines[i]).map((c) => `<td>${c}</td>`).join('')}</tr>`);
+      out.push(`<table><thead><tr>${head.map((c) => `<th>${c}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table>`);
+    } else if (!l.trim()) {
+      i++;
+    } else {
+      const para = [];
+      for (; i < lines.length && lines[i].trim() && !/^(#{1,6}\s|```|~~~|&gt;|\s*([-*+]|\d+[.)])\s)/.test(lines[i]); i++) para.push(lines[i]);
+      if (!para.length) para.push(lines[i++]);
+      out.push(`<p>${para.map(inline).join('<br>')}</p>`);
+    }
+  }
+  return out.join('\n');
+}
+
+// ---- Hash ----
+export const HASHES = ['SHA-1', 'SHA-256', 'SHA-384', 'SHA-512'];
+export async function hashText(text, algo) {
+  const buf = await crypto.subtle.digest(algo, new TextEncoder().encode(text));
+  return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+// ---- UUID ----
+// uuid7: time-ordered (RFC 9562): 48-bit ms timestamp, then random bits.
+export function uuid7(now = Date.now()) {
+  const b = crypto.getRandomValues(new Uint8Array(16));
+  for (let i = 0; i < 6; i++) b[i] = Math.floor(now / 2 ** (8 * (5 - i))) & 0xff;
+  b[6] = (b[6] & 0x0f) | 0x70;
+  b[8] = (b[8] & 0x3f) | 0x80;
+  const h = [...b].map((x) => x.toString(16).padStart(2, '0')).join('');
+  return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`;
+}
+// uuidInfo reads a UUID's version, and the time for v1/v7. Returns null if s isn't a UUID.
+export function uuidInfo(s) {
+  const h = s.trim().replace(/^urn:uuid:|[{}]/gi, '').toLowerCase();
+  if (!/^[0-9a-f]{8}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{12}$/.test(h)) return null;
+  const x = h.replace(/-/g, '');
+  const version = parseInt(x[12], 16);
+  const info = { version, nil: /^0+$/.test(x), max: /^f+$/.test(x) };
+  if (version === 7) info.date = new Date(parseInt(x.slice(0, 12), 16));
+  if (version === 1) info.date = new Date(Number((BigInt('0x' + x.slice(13, 16) + x.slice(8, 12) + x.slice(0, 8)) - 122192928000000000n) / 10000n));
+  return info;
+}

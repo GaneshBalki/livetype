@@ -4,6 +4,12 @@ All notable changes to LiveType are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [4.5.0] - 2026-11-27
+
+### Added
+
+- Six more tools at devshire.in/tools: Regex tester (highlighted matches, groups, replace preview), Case converter, Word counter (reading time, most used words), Markdown preview (safe, copy the HTML), Hash generator (SHA-1/256/384/512 with compare) and UUID generator (v4 and v7, bulk, inspect any UUID).
+
 ## [4.4.0] - 2026-11-27
 
 ### Added
@@ -296,6 +302,7 @@ All notable changes to LiveType are recorded here. The format follows
 - Live typing session with a shareable viewer link, write requests, and host
   approve, deny and take-back controls. Single Go binary with embedded web assets.
 
+[4.5.0]: https://github.com/GaneshBalki/livetype/compare/v4.4.0...v4.5.0
 [4.4.0]: https://github.com/GaneshBalki/livetype/compare/v4.3.1...v4.4.0
 [4.3.1]: https://github.com/GaneshBalki/livetype/compare/v4.3.0...v4.3.1
 [4.3.0]: https://github.com/GaneshBalki/livetype/compare/v4.2.0...v4.3.0
